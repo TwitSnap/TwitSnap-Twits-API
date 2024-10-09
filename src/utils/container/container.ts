@@ -3,7 +3,6 @@ import { container } from "tsyringe";
 import "reflect-metadata";
 import {DatabaseConnector} from "../../db/connectors/DatabaseConnector";
 import {Logger} from "../logger/Logger";
-import {UserController} from "../../api/controller/UserController";
 import {TypeORMTwitRepository} from "../../db/repositories/impls/TypeORM/twit/TypeORMTwitRepository";
 import {LoggingStrategy} from "../logger/LoggingStrategy";
 import {WinstonLoggerStrategy} from "../logger/WinstonLoggerStrategy";
@@ -11,6 +10,8 @@ import {TypeORMDatabaseConnectorStrategy} from "../../db/connectors/TypeORMDatab
 import {DatabaseConnectorStrategy} from "../../db/connectors/DatabaseConnectorStrategy";
 import {DataSource} from "typeorm";
 import {LOGGING, LOG_DEBUG, LOG_ERROR, LOG_INFO} from "../config";
+import { TwitRepository } from "../../db/repositories/interfaces/TwitRepository";
+import { TwitController } from "../../api/controller/TwitController";
 
 // ? Register all dependencies
 
@@ -21,11 +22,11 @@ container.register<boolean>("logError", {useValue: (LOG_ERROR === "true") });
 container.register<boolean>("logInfo", {useValue: (LOG_INFO === "true") });
 
 container.register<DatabaseConnectorStrategy<DataSource, DataSource>>("DatabaseConnectorStrategy", TypeORMDatabaseConnectorStrategy);
-
+container.register<TwitRepository>("UserRepository", TypeORMTwitRepository);
 // ? Get instances
 export const logger = container.resolve(Logger);
 export const databaseConnector = container.resolve(DatabaseConnector<DataSource, DataSource>);
-export const userController = container.resolve(UserController);
+export const twitController = container.resolve(TwitController);
 export const userService = null;
 export const sessionService = null;
 export const federateAuthController = null;
