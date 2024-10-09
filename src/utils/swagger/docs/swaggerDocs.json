@@ -1,0 +1,156 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "My API",
+      "description": "API documentation",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/v1/auth/login": {
+        "post": {
+          "summary": "Login to the application",
+          "description": "Use this endpoint to login to the application.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "description": "The user's email."
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": "The user's password."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Successful login"
+            },
+            "400": {
+              "description": "Invalid credentials"
+            }
+          }
+
+        }
+      },
+      "/v1/auth/register": {
+        "post": {
+          "summary": "Register a new user",
+          "description": "Use this endpoint to register a new user in the system.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The user's ID."
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": "The user's password."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "User registered successfully"
+            },
+            "400": {
+              "description": "Invalid input data"
+            }
+          }
+        }
+      },
+      "/v1/auth/:token":{
+        "post": {
+          "summary": "Authenticate token",
+          "description": "Use this endpoint to authenticate user.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "The user's token."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Logged In Succesfully"
+            },
+            "400": {
+              "description": "Invalid input data"
+            }
+          }
+        }
+      },
+      "/v1/auth/federate/google/login":{
+        "get":{
+          "summary": "Endpoint para recibir REDIRECT/CALLBACKS de google",
+          "description": "Use this endpoint to login user with Google.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                  "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "The user's token."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/federate/google/authenticate":{
+        "post": {
+          "summary": "Authenticate google token",
+          "description": "Use this endpoint to authenticate user.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "The user's token."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "User registered successfully"
+            },
+            "400": {
+              "description": "Invalid input data"
+            }
+          }
+        }
+      }
+    }
+  }
