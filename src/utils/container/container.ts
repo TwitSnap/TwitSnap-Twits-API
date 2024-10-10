@@ -1,9 +1,9 @@
+import { AuraTwitRepository } from './../../db/repositories/impls/Aura/AuraTwitRepository';
 
 import { container } from "tsyringe";
 import "reflect-metadata";
 import {DatabaseConnector} from "../../db/connectors/DatabaseConnector";
 import {Logger} from "../logger/Logger";
-import {TypeORMTwitRepository} from "../../db/repositories/impls/TypeORM/twit/TypeORMTwitRepository";
 import {LoggingStrategy} from "../logger/LoggingStrategy";
 import {WinstonLoggerStrategy} from "../logger/WinstonLoggerStrategy";
 import {TypeORMDatabaseConnectorStrategy} from "../../db/connectors/TypeORMDatabaseConnectorStrategy";
@@ -22,7 +22,7 @@ container.register<boolean>("logError", {useValue: (LOG_ERROR === "true") });
 container.register<boolean>("logInfo", {useValue: (LOG_INFO === "true") });
 
 container.register<DatabaseConnectorStrategy<DataSource, DataSource>>("DatabaseConnectorStrategy", TypeORMDatabaseConnectorStrategy);
-container.register<TwitRepository>("UserRepository", TypeORMTwitRepository);
+container.register<TwitRepository>("TwitRepository", AuraTwitRepository);
 // ? Get instances
 export const logger = container.resolve(Logger);
 export const databaseConnector = container.resolve(DatabaseConnector<DataSource, DataSource>);

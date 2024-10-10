@@ -6,23 +6,27 @@
       "version": "1.0.0"
     },
     "paths": {
-      "/v1/auth/login": {
+      "/v1/twit": {
         "post": {
-          "summary": "Login to the application",
-          "description": "Use this endpoint to login to the application.",
+          "summary": "Postear un twit",
+          "description": "Este endpoint se utiliza para postear un twit",
           "requestBody": {
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "email": {
+                    "token": {
                       "type": "string",
-                      "description": "The user's email."
+                      "description": "El token de la persona"
                     },
-                    "password": {
+                    "body": {
                       "type": "string",
-                      "description": "The user's password."
+                      "description": "El mensaje que quiere mandar"
+                    },
+                    "tags":{
+                      "type": "object",
+                      "description": "Los tags que se adhierena a este twit"
                     }
                   }
                 }
@@ -40,7 +44,7 @@
 
         }
       },
-      "/v1/auth/register": {
+      "/v1/twit/comment": {
         "post": {
           "summary": "Register a new user",
           "description": "Use this endpoint to register a new user in the system.",
@@ -50,13 +54,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
+                    "token": {
                       "type": "string",
                       "description": "The user's ID."
                     },
-                    "password": {
+                    "post_id": {
                       "type": "string",
-                      "description": "The user's password."
+                      "description": "The id of the post the user is commenting"
+                    },
+                    "body":{
+                      "type": "string",
+                      "description": "The user comment."
                     }
                   }
                 }
@@ -73,8 +81,19 @@
           }
         }
       },
-      "/v1/auth/:token":{
+      "/v1/twit/comment/:id":{
         "post": {
+          "parameters":
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "The ID of the comment to be handled."
+            },
+
           "summary": "Authenticate token",
           "description": "Use this endpoint to authenticate user.",
           "requestBody": {

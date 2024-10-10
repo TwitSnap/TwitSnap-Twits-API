@@ -1,20 +1,30 @@
-import {Column, Entity, PrimaryColumn} from "typeorm";
+import {Column, Entity, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 
-@Entity("Twit")
 export class Twit {
-    @PrimaryColumn()
-    private readonly id: string;
 
-    @Column({ nullable: false })
-    private readonly password: string;
+    private readonly message: string;
 
-    constructor(id: string, password: string) {
-        this.id = id;
-        this.password = password;
+    private readonly tags: string[];
+
+    private readonly token: string;
+
+    constructor(message: string, tags:string[], token:string) {
+        this.message = message;
+        this.tags = tags;
+        this.token = token;
     }
 
-    public getId = (): string => this.id;
+    public getMessage = () => {
+        return this.message
+    }
 
-    public getPassword = (): string => this.password;
+    public getTags = () => {
+        return this.tags
+    }
+
+    public getToken = () =>{
+        return this.token;
+    }
+
 
 }

@@ -1,3 +1,5 @@
+import { EagerResult } from 'neo4j-driver';
+import { Comment } from '../../../services/domain/Comment';
 import { Twit } from "../../../services/domain/Twit";
 
 export interface TwitRepository {
@@ -15,5 +17,7 @@ export interface TwitRepository {
      * @param user - The `User` entity to be saved.
      * @returns A promise that resolves to the saved `User` entity.
      */
-    save: (user: Twit) => Promise<Twit>;
+    save: (user: Twit) => Promise<EagerResult>;
+
+    comment_post: (comment:Comment) => Promise<EagerResult>
 }

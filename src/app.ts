@@ -1,3 +1,4 @@
+import { AuraDataSource } from './db/connectors/dataSource';
 import "reflect-metadata";
 import express from "express";
 import router from "./api/routes/routes";
@@ -18,10 +19,12 @@ app.use(errorMiddleware);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-databaseConnector.initializeConnection().then(() => {
+AuraDataSource.getServerInfo().then(() => {
     app.listen(PORT, () => {
         logger.logInfo(`Server is running on port ${PORT}`);
     });
+}).catch(() => {
+    logger.logError("Error in connectin to Aura Database")
 });
 
 export default app;
