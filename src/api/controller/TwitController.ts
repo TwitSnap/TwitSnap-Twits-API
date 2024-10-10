@@ -53,4 +53,14 @@ export class TwitController extends Controller{
         this.okResponse(res,post);
     }
 
+    public getAllPostsFromUser = async (req: Request, res: Response) => {
+        if (!req.query.id){
+            throw new BadRequestError("");
+        }
+        const id = req.query.id as string;
+        const posts = await this.twitService.getAllPostsFrom(id);
+        console.log(posts);
+        this.okResponse(res,posts);
+    }
+
 }

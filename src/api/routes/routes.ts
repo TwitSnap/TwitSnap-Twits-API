@@ -6,8 +6,9 @@ const router = Router();
 
 router.post("/v1/twit",twitController.postTwit);
 router.post("/v1/twit/like/:id",twitController.like);
-router.post("/v1/twit/comment",twitController.comment)
-router.get("/v1/twit/post", twitController.getPost)
+router.post("/v1/twit/comment",twitController.comment);
+router.get("/v1/twit/post", twitController.getPost);
+router.get("/v1/twit/post/all",twitController.getAllPostsFromUser);
 
 
 export default router;

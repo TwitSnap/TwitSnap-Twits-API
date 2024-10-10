@@ -23,4 +23,8 @@ export class TwitService {
     public getPost = async(id:string) =>{
         return await this.twitRepository.getById(id);
     }
+
+    public getAllPostsFrom = async(id:string) =>{
+        return await this.twitRepository.getAllById(id);
+    }
 }

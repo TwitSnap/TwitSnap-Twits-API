@@ -1,6 +1,6 @@
 import { BadRequestError } from './../../../../api/errors/BadRequestError';
 import { Comment } from './../../../../services/domain/Comment';
-import { EagerResult } from "neo4j-driver";
+import { EagerResult, Record } from "neo4j-driver";
 import { Twit } from "../../../../services/domain/Twit";
 import { StandardDatabaseError } from "../../../errors/StandardDatabaseError";
 import { TwitRepository } from "../../interfaces/TwitRepository";
@@ -60,5 +60,25 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 post_id:comment.getPostId()
                 }
             )
+        }
+    
+        getAllById = async (id:string): Promise<Post[]|null> =>{
+            const result= await this.auraRepository.executeQuery('\
+            MATCH (p:Post {created_by:$id})\
+            RETURN p.id as post_id,p.message as message,p.created_by as created_by, p.tags as tags, p.created_at as created_at\
+            ',
+            {id:id})
+            const posts = this.formatPosts(result);
+            return posts;
+        }
+
+        private formatPosts = (result: EagerResult) => {
+            const records = result.records;
+            let posts: Post[] = []
+            for (let record of records){
+                let post = new Post(record.get("message"),record.get("tags"),record.get("created_by"),record.get("post_id"),record.get("created_at"));
+                posts.push(post)
+            }
+            return posts;   
         }
 }

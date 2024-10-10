@@ -54,7 +54,7 @@
             {
               "name": "id",
               "in": "query",
-              "description": "The name of the user",
+              "description": "The id of the post",
               "required": false,
               "type": "string"
             }
@@ -125,55 +125,20 @@
           }
         }
       },
-      "/v1/auth/federate/google/login":{
-        "get":{
-          "summary": "Endpoint para recibir REDIRECT/CALLBACKS de google",
-          "description": "Use this endpoint to login user with Google.",
-          "requestBody": {
-            "content": {
-              "application/json": {
-                  "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "The user's token."
-                    }
-                  }
-                }
-              }
+      "/v1/twit/post/all":{
+        "get": {
+          "parameters": [
+            {
+              "name": "id",
+              "in": "query",
+              "description": "The name of the user",
+              "required": false,
+              "type": "string"
             }
-          }
-        }
-      },
-      "/v1/federate/google/authenticate":{
-        "post": {
-          "summary": "Authenticate google token",
-          "description": "Use this endpoint to authenticate user.",
-          "requestBody": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "The user's token."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "User registered successfully"
-            },
-            "400": {
-              "description": "Invalid input data"
-            }
-          }
-        }
+          ]},
+
+        "summary": "Authenticate token",
+        "description": "Use this endpoint to authenticate user."
       }
     }
   }

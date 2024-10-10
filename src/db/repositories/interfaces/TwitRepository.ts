@@ -21,4 +21,6 @@ export interface TwitRepository {
     save: (user: Twit) => Promise<EagerResult>;
 
     comment_post: (comment:Comment) => Promise<EagerResult>
+
+    getAllById: (id: string) => Promise<Post[]| null>;
 }
