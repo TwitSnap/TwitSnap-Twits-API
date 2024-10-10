@@ -5,6 +5,7 @@ import { Twit } from "../../../../services/domain/Twit";
 import { StandardDatabaseError } from "../../../errors/StandardDatabaseError";
 import { TwitRepository } from "../../interfaces/TwitRepository";
 import { AuraRepository } from "./AuraRepository";
+import { Post } from '../../../../services/domain/Post';
 
 
 
@@ -15,16 +16,16 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         /**
      * @inheritDoc
      */
-        getById = async (id: string): Promise<Twit | null> => {
+        getById = async (id: string): Promise<Post | null> => {
             const ans = await this.auraRepository.executeQuery('\
             MATCH (p:Post {id:$id})\
-            RETURN p.id as id,p.message as message,p.created_by as created_by, p.tags as tags\
+            RETURN p.id as post_id,p.message as message,p.created_by as created_by, p.tags as tags, p.created_at as created_at\
             ',{id:id})
             const record = ans.records.at(0);
             if (!record){
                 throw new BadRequestError("");
             }
-            return new Twit(record.get("message"),record.get("tags"),record.get("created_by"))
+            return new Post(record.get("message"),record.get("tags"),record.get("created_by"),record.get("post_id"),record.get("created_at"))
         };
     
         /**

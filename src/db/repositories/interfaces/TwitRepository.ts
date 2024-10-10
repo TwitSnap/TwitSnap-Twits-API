@@ -1,5 +1,6 @@
 import { EagerResult } from 'neo4j-driver';
 import { Comment } from '../../../services/domain/Comment';
+import { Post } from '../../../services/domain/Post';
 import { Twit } from "../../../services/domain/Twit";
 
 export interface TwitRepository {
@@ -9,7 +10,7 @@ export interface TwitRepository {
      * @param id - The unique identifier of the User.
      * @returns A promise that resolves to the `User` entity if found, or `null` if not found.
      */
-    getById: (id: string) => Promise<Twit | null>;
+    getById: (id: string) => Promise<Post | null>;
 
     /**
      * Saves a new or existing `User` entity to the storage.
