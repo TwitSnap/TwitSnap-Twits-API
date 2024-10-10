@@ -1,3 +1,4 @@
+import { BadRequestError } from './../../../../api/errors/BadRequestError';
 import { Comment } from './../../../../services/domain/Comment';
 import { EagerResult } from "neo4j-driver";
 import { Twit } from "../../../../services/domain/Twit";
@@ -15,7 +16,15 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
      * @inheritDoc
      */
         getById = async (id: string): Promise<Twit | null> => {
-            return null;
+            const ans = await this.auraRepository.executeQuery('\
+            MATCH (p:Post {id:$id})\
+            RETURN p.id as id,p.message as message,p.created_by as created_by, p.tags as tags\
+            ',{id:id})
+            const record = ans.records.at(0);
+            if (!record){
+                throw new BadRequestError("");
+            }
+            return new Twit(record.get("message"),record.get("tags"),record.get("created_by"))
         };
     
         /**
@@ -25,10 +34,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return await this.auraRepository.executeQuery(
                 'CREATE (p:Post {id:randomUUID(),\
                                 created_by:$token,\
+                                tags:$tags,\
                                 message:$message, \
                                 created_at: localdatetime()\
                 })',
-                {token:twit.getToken(),message:twit.getMessage()}
+                {token:twit.getToken(),message:twit.getMessage(),tags:twit.getTags()}
 
             )
         };

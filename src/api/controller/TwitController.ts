@@ -1,3 +1,4 @@
+import { BadRequestError } from './../errors/BadRequestError';
 import { Response } from 'express';
 import { Request } from 'express';
 import { injectable } from "tsyringe";
@@ -17,6 +18,7 @@ export class TwitController extends Controller{
     }
 
     public postTwit = async (req: Request, res: Response) => {
+        console.log(req.body.tags);
         const body = new Twit(req.body.body,req.body.tags,req.body.token);
         const {records,summary} =  await this.twitService.post(body);
         console.log(summary);
@@ -42,7 +44,13 @@ export class TwitController extends Controller{
     }
 
     public getPost = async (req: Request, res: Response) => {
-        console.log(req.query.id);
+        if (! req.query.id){
+            throw new BadRequestError("");
+        }
+        const id = req.query.id as string;
+        const post = await this.twitService.getPost(id);
+        console.log(post);
+        this.okResponse(res,post);
     }
 
 }

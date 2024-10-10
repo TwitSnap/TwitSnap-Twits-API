@@ -19,4 +19,8 @@ export class TwitService {
     public comment = async (comment: Comment) =>{
         return await this.twitRepository.comment_post(comment);
     }
+
+    public getPost = async(id:string) =>{
+        return await this.twitRepository.getById(id);
+    }
 }

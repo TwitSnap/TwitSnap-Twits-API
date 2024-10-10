@@ -24,9 +24,13 @@
                       "type": "string",
                       "description": "El mensaje que quiere mandar"
                     },
-                    "tags":{
-                      "type": "object",
-                      "description": "Los tags que se adhierena a este twit"
+                    "tags": {
+                      "type": "array",
+                      "description": "Los tags que se adhieren a este twit",
+                      "items": {
+                        "type": "string",
+                        "description": "Un tag individual"
+                      }
                     }
                   }
                 }
@@ -44,7 +48,17 @@
 
         }
       },
-      "/v1/twit/comment": {
+      "/v1/twit/post": {
+        "get": {
+          "parameters": [
+            {
+              "name": "id",
+              "in": "query",
+              "description": "The name of the user",
+              "required": false,
+              "type": "string"
+            }
+          ],
         "post": {
           "summary": "Register a new user",
           "description": "Use this endpoint to register a new user in the system.",
@@ -82,17 +96,7 @@
         }
       },
       "/v1/twit/comment/:id":{
-        "post": {
-          "parameters":
-            {
-              "in": "path",
-              "name": "id",
-              "required": true,
-              "schema": {
-                "type": "string"
-              },
-              "description": "The ID of the comment to be handled."
-            },
+
 
           "summary": "Authenticate token",
           "description": "Use this endpoint to authenticate user.",
