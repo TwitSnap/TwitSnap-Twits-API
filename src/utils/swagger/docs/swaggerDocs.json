@@ -94,10 +94,10 @@
             }
           }
         }
-      },
-      "/v1/twit/comment/:id":{
+      }},
+      "/v1/twit/comment":{
 
-
+        "post":{
           "summary": "Authenticate token",
           "description": "Use this endpoint to authenticate user.",
           "requestBody": {
@@ -109,6 +109,14 @@
                     "token": {
                       "type": "string",
                       "description": "The user's token."
+                    },
+                    "body":{
+                      "type":"string",
+                      "description": "The user comment."
+                    },
+                    "post_id":{
+                      "type":"string",
+                      "description":"El id del post que se quiere comentar"
                     }
                   }
                 }
@@ -123,8 +131,7 @@
               "description": "Invalid input data"
             }
           }
-        }
-      },
+      }},
       "/v1/twit/post/all":{
         "get": {
           "parameters": [
@@ -140,5 +147,5 @@
         "summary": "Authenticate token",
         "description": "Use this endpoint to authenticate user."
       }
-    }
   }
+}
