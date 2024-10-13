@@ -81,7 +81,7 @@ export class TwitController extends Controller{
     public getAllPostsFromUser = async (req: Request, res: Response,next: NextFunction) => {
         
         try{
-            if (!req.query.id){
+            if (!req.query.user_id){
                 throw new BadRequestError("");
             }
             const id = req.query.user_id as string;
