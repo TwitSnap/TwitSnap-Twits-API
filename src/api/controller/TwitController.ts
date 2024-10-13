@@ -1,9 +1,9 @@
 import { BadRequestError } from './../errors/BadRequestError';
-import { Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { Request } from 'express';
 import { injectable } from "tsyringe";
 import { TwitService } from '../../services/application/twit/TwitService';
-import { Comment } from '../../services/domain/Comment';
+import { CommentQuery } from '../../services/domain/Comment';
 import { Twit } from '../../services/domain/Twit';
 import { Controller } from "./Controller";
 import { HttpResponseSender } from "./HttpResponseSender";
@@ -17,7 +17,7 @@ export class TwitController extends Controller{
         this.twitService = twitService;
     }
 
-    public postTwit = async (req: Request, res: Response) => {
+    public postTwit = async (req: Request, res: Response,next: NextFunction) => {
         console.log(req.body.tags);
         const body = new Twit(req.body.body,req.body.tags,req.body.token);
         const {records,summary} =  await this.twitService.post(body);
@@ -26,16 +26,16 @@ export class TwitController extends Controller{
         return;
     }
 
-    public retwit = async (req: Request, res: Response) => {
+    public retwit = async (req: Request, res: Response,next: NextFunction) => {
 
     }
 
-    public like = async (req: Request, res: Response) => {
+    public like = async (req: Request, res: Response,next: NextFunction) => {
 
     }
 
-    public comment = async (req: Request, res: Response) => {
-        const body = new Comment(req.body.body,req.body.post_id,req.body.token)
+    public comment = async (req: Request, res: Response,next: NextFunction) => {
+        const body = new CommentQuery(req.body.body,req.body.post_id,req.body.token)
         const {records,summary} = await this.twitService.comment(body);
         console.log(summary)
         this.okNoContentResponse(res)
@@ -43,7 +43,7 @@ export class TwitController extends Controller{
 
     }
 
-    public getPost = async (req: Request, res: Response) => {
+    public getPost = async (req: Request, res: Response,next: NextFunction) => {
         if (! req.query.id){
             throw new BadRequestError("");
         }
@@ -53,7 +53,7 @@ export class TwitController extends Controller{
         this.okResponse(res,post);
     }
 
-    public getAllPostsFromUser = async (req: Request, res: Response) => {
+    public getAllPostsFromUser = async (req: Request, res: Response,next: NextFunction) => {
         if (!req.query.id){
             throw new BadRequestError("");
         }

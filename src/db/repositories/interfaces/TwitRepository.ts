@@ -1,6 +1,6 @@
+import { OverViewPosts, Post } from './../../../services/domain/Post';
 import { EagerResult } from 'neo4j-driver';
-import { Comment } from '../../../services/domain/Comment';
-import { Post } from '../../../services/domain/Post';
+import { CommentQuery } from '../../../services/domain/Comment';
 import { Twit } from "../../../services/domain/Twit";
 
 export interface TwitRepository {
@@ -20,7 +20,7 @@ export interface TwitRepository {
      */
     save: (user: Twit) => Promise<EagerResult>;
 
-    comment_post: (comment:Comment) => Promise<EagerResult>
+    comment_post: (comment:CommentQuery) => Promise<EagerResult>
 
-    getAllById: (id: string) => Promise<Post[]| null>;
+    getAllByUserId: (id: string) => Promise<OverViewPosts| null>;
 }

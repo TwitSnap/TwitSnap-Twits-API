@@ -8,7 +8,7 @@ router.post("/v1/twit",twitController.postTwit);
 router.post("/v1/twit/like/:id",twitController.like);
 router.post("/v1/twit/comment",twitController.comment);
 router.get("/v1/twit/post", twitController.getPost);
-router.get("/v1/twit/post/all",twitController.getAllPostsFromUser);
+router.get("/v1/twit/posts/user",twitController.getAllPostsFromUser);
 
 
 export default router;

@@ -2,7 +2,7 @@ import { twitController } from './../../../utils/container/container';
 import { Twit } from './../../domain/Twit';
 import { inject, injectable } from "tsyringe";
 import { TwitRepository } from "../../../db/repositories/interfaces/TwitRepository";
-import { Comment } from '../../domain/Comment';
+import { CommentQuery } from '../../domain/Comment';
 
 @injectable()
 export class TwitService {
@@ -16,7 +16,7 @@ export class TwitService {
         return await this.twitRepository.save(twit);
     }
 
-    public comment = async (comment: Comment) =>{
+    public comment = async (comment: CommentQuery) =>{
         return await this.twitRepository.comment_post(comment);
     }
 
@@ -25,6 +25,6 @@ export class TwitService {
     }
 
     public getAllPostsFrom = async(id:string) =>{
-        return await this.twitRepository.getAllById(id);
+        return await this.twitRepository.getAllByUserId(id);
     }
 }

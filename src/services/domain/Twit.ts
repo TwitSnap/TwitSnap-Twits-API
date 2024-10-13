@@ -8,6 +8,8 @@ export class Twit {
 
     private readonly token: string;
 
+
+
     constructor(message: string, tags:string[], token:string) {
         this.message = message;
         this.tags = tags;
@@ -25,6 +27,7 @@ export class Twit {
     public getToken = () =>{
         return this.token;
     }
+
 
 
 }

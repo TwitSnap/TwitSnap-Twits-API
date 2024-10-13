@@ -1,11 +1,11 @@
+import { comment, OverViewPost, OverViewPosts, Post } from './../../../../services/domain/Post';
 import { BadRequestError } from './../../../../api/errors/BadRequestError';
-import { Comment } from './../../../../services/domain/Comment';
+import { CommentQuery } from './../../../../services/domain/Comment';
 import { EagerResult, Record } from "neo4j-driver";
 import { Twit } from "../../../../services/domain/Twit";
 import { StandardDatabaseError } from "../../../errors/StandardDatabaseError";
 import { TwitRepository } from "../../interfaces/TwitRepository";
 import { AuraRepository } from "./AuraRepository";
-import { Post } from '../../../../services/domain/Post';
 
 
 
@@ -25,7 +25,15 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             if (!record){
                 throw new BadRequestError("");
             }
-            return new Post(record.get("message"),record.get("tags"),record.get("created_by"),record.get("post_id"),record.get("created_at"))
+            const post: Post = {
+                message:record.get("message"),
+                tags:record.get("tags"),
+                created_by:record.get("created_by"),
+                post_id:record.get("post_id"),
+                created_at:new Date(record.get("created_at")).toISOString(),
+                comments: await this.getComments(id)
+            }
+            return post
         };
     
         /**
@@ -44,7 +52,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             )
         };
 
-        comment_post = async (comment: Comment): Promise<EagerResult> =>{
+        comment_post = async (comment: CommentQuery): Promise<EagerResult> =>{
             return await this.auraRepository.executeQuery(
                 'CREATE (c:Comment{id:randomUUID(),\
                                     created_by:$token,\
@@ -62,23 +70,56 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             )
         }
     
-        getAllById = async (id:string): Promise<Post[]|null> =>{
+        getAllByUserId = async (id:string): Promise< OverViewPosts |null> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
             RETURN p.id as post_id,p.message as message,p.created_by as created_by, p.tags as tags, p.created_at as created_at\
             ',
             {id:id})
-            const posts = this.formatPosts(result);
+            const posts = {posts:await this.formatPosts(result)};
+
             return posts;
         }
 
-        private formatPosts = (result: EagerResult) => {
+        private formatPosts = async (result: EagerResult) => {
             const records = result.records;
-            let posts: Post[] = []
+            let posts = []
             for (let record of records){
-                let post = new Post(record.get("message"),record.get("tags"),record.get("created_by"),record.get("post_id"),record.get("created_at"));
-                posts.push(post)
+                const obj: OverViewPost = {message:record.get("message"),
+                            tags:record.get("tags"),
+                            created_by:record.get("created_by"),
+                            post_id:record.get("post_id"),
+                            created_at:new Date(record.get("created_at")).toISOString(),
+                            ammount: await this.getAmmountOfComments(record.get("post_id"))};
+                posts.push(obj)
             }
             return posts;   
+        }
+
+        private getAmmountOfComments = async (post_id: string) => {
+            const ammount = await this.auraRepository.executeQuery('\
+                            MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY] -> (c:Comment)\
+                            RETURN COUNT(c) as ammount\
+            ',{post_id})
+            return ammount.records.at(0)?.get("ammount");
+        }
+
+        private getComments = async (post_id:string) => {
+            let comments = []
+            const query = await this.auraRepository.executeQuery('\
+                            MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Comment)\
+                            RETURN c.created_at as created_at, c.id as id, c.message as message, c.created_by as created_by\
+            ',{post_id})
+            for (let record of query.records){
+                const obj: comment = {
+                    message: record.get("message"),
+                    post_id: post_id,
+                    commenter_token: record.get("created_by"),
+                    comment_id: record.get("id"),
+                    created_at: new Date(record.get("created_at")).toISOString()
+                }
+                comments.push(obj)
+            }
+            return comments
         }
 }

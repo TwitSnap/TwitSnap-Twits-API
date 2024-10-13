@@ -50,6 +50,8 @@
       },
       "/v1/twit/post": {
         "get": {
+          "summary":"Get a post with all the comments",
+          "description":"Get a Post by id with all the comments",
           "parameters": [
             {
               "name": "id",
@@ -58,7 +60,7 @@
               "required": false,
               "type": "string"
             }
-          ],
+          ]},
         "post": {
           "summary": "Register a new user",
           "description": "Use this endpoint to register a new user in the system.",
@@ -94,7 +96,7 @@
             }
           }
         }
-      }},
+      },
       "/v1/twit/comment":{
 
         "post":{
@@ -132,7 +134,7 @@
             }
           }
       }},
-      "/v1/twit/post/all":{
+      "/v1/twit/posts/user":{
         "get": {
           "parameters": [
             {

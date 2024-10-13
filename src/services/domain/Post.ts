@@ -1,36 +1,31 @@
 import {Column, Entity, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 
-export class Post {
+export interface OverViewPost {
+    message:string,
+    tags:string[],
+    created_by:string,
+    post_id:string,
+    created_at:string,
+    ammount: number;
+}
 
-    private readonly message: string;
+export interface OverViewPosts{
+    posts:OverViewPost[]
+}
 
-    private readonly tags: string[];
+export interface comment{
+    message: string;
+    post_id: string;
+    commenter_token: string;
+    comment_id: string;
+    created_at: string
+}
 
-    private readonly token: string;
-
-    private readonly post_id: string;
-
-    private readonly time: string;
-
-    constructor(message: string, tags: string[], token: string,post_id: string, time: string) {
-        this.message = message;
-        this.tags = tags;
-        this.token = token;
-        this.post_id = post_id;
-        this.time = time;
-    }
-
-    public getMessage = () => {
-        return this.message
-    }
-
-    public getTags = () => {
-        return this.tags
-    }
-
-    public getToken = () =>{
-        return this.token;
-    }
-
-
+export interface Post{
+    message:string,
+    tags:string[],
+    created_by:string,
+    post_id:string,
+    created_at:string,
+    comments: comment[]
 }

@@ -1,5 +1,5 @@
 
-export class Comment {
+export class CommentQuery {
 
     private readonly message: string;
 
@@ -7,10 +7,13 @@ export class Comment {
 
     private readonly commenter_token: string;
 
-    constructor(message: string, postId:string, token:string) {
+    private readonly comment_id: string;
+
+    constructor(message: string, postId:string, token:string, comment_id: string = "") {
         this.message = message;
         this.post_id = postId;
         this.commenter_token = token;
+        this.comment_id = comment_id;
     }
 
     public getMessage = () => {
@@ -23,6 +26,10 @@ export class Comment {
 
     public getToken = () =>{
         return this.commenter_token;
+    }
+
+    public getCommentId = () => {
+        return this.comment_id
     }
 
 
