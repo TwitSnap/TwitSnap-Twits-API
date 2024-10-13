@@ -16,10 +16,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "El token de la persona"
-                    },
                     "body": {
                       "type": "string",
                       "description": "El mensaje que quiere mandar"
@@ -73,10 +69,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "The user's token."
-                    },
                     "body":{
                       "type":"string",
                       "description": "The user comment."
@@ -105,7 +97,7 @@
           "description": "Use this endpoint to authenticate user.",
           "parameters": [
             {
-              "name": "id",
+              "name": "user_id",
               "in": "query",
               "description": "The name of the user",
               "required": false,
