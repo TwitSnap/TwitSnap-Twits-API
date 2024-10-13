@@ -18,12 +18,18 @@ export class TwitController extends Controller{
     }
 
     public postTwit = async (req: Request, res: Response,next: NextFunction) => {
-        console.log(req.body.tags);
-        const body = new Twit(req.body.body,req.body.tags,req.body.token);
-        const {records,summary} =  await this.twitService.post(body);
-        console.log(summary);
-        this.okNoContentResponse(res);
-        return;
+        try{
+            console.log(req.body.tags);
+            const body = new Twit(req.body.body,req.body.tags,req.body.token);
+            const {records,summary} =  await this.twitService.post(body);
+            console.log(summary);
+            this.okNoContentResponse(res);
+            return;
+        }
+        catch(e){
+            next(e)
+        }
+
     }
 
     public retwit = async (req: Request, res: Response,next: NextFunction) => {
@@ -35,32 +41,49 @@ export class TwitController extends Controller{
     }
 
     public comment = async (req: Request, res: Response,next: NextFunction) => {
-        const body = new CommentQuery(req.body.body,req.body.post_id,req.body.token)
-        const {records,summary} = await this.twitService.comment(body);
-        console.log(summary)
-        this.okNoContentResponse(res)
-        return
+        try{
+            const body = new CommentQuery(req.body.body,req.body.post_id,req.body.token)
+            const {records,summary} = await this.twitService.comment(body);
+            console.log(summary)
+            this.okNoContentResponse(res)
+            return
+        }catch(e){
+            next(e)
+        }
+
 
     }
 
     public getPost = async (req: Request, res: Response,next: NextFunction) => {
-        if (! req.query.id){
-            throw new BadRequestError("");
+        try{
+            if (! req.query.id){
+                throw new BadRequestError("");
+            }
+            const id = req.query.id as string;
+            const post = await this.twitService.getPost(id);
+            console.log(post);
+            this.okResponse(res,post);
         }
-        const id = req.query.id as string;
-        const post = await this.twitService.getPost(id);
-        console.log(post);
-        this.okResponse(res,post);
+        catch(e){
+            next(e)
+        }
+
     }
 
     public getAllPostsFromUser = async (req: Request, res: Response,next: NextFunction) => {
-        if (!req.query.id){
-            throw new BadRequestError("");
+        try{
+            if (!req.query.id){
+                throw new BadRequestError("");
+            }
+            const id = req.query.id as string;
+            const posts = await this.twitService.getAllPostsFrom(id);
+            console.log(posts);
+            this.okResponse(res,posts);
         }
-        const id = req.query.id as string;
-        const posts = await this.twitService.getAllPostsFrom(id);
-        console.log(posts);
-        this.okResponse(res,posts);
+        catch(e){
+            next(e)
+        }
+
     }
 
 }
