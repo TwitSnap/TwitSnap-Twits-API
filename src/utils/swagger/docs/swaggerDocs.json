@@ -60,47 +60,12 @@
               "required": false,
               "type": "string"
             }
-          ]},
-        "post": {
-          "summary": "Register a new user",
-          "description": "Use this endpoint to register a new user in the system.",
-          "requestBody": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string",
-                      "description": "The user's ID."
-                    },
-                    "post_id": {
-                      "type": "string",
-                      "description": "The id of the post the user is commenting"
-                    },
-                    "body":{
-                      "type": "string",
-                      "description": "The user comment."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "User registered successfully"
-            },
-            "400": {
-              "description": "Invalid input data"
-            }
-          }
-        }
+          ]}
       },
       "/v1/twit/comment":{
 
         "post":{
-          "summary": "Authenticate token",
+          "summary": "Posetar un commentario a un post",
           "description": "Use this endpoint to authenticate user.",
           "requestBody": {
             "content": {
@@ -136,6 +101,8 @@
       }},
       "/v1/twit/posts/user":{
         "get": {
+          "summary": "Obtener todos los posts de un usuario",
+          "description": "Use this endpoint to authenticate user.",
           "parameters": [
             {
               "name": "id",
@@ -144,10 +111,9 @@
               "required": false,
               "type": "string"
             }
-          ]},
+          ]}
 
-        "summary": "Authenticate token",
-        "description": "Use this endpoint to authenticate user."
+
       }
   }
 }
