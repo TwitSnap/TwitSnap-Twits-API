@@ -43,7 +43,9 @@ export class TwitController extends Controller{
     public retwit = async (req: Request, res: Response,next: NextFunction) => {
         try{
             const user_id = await this.obtainIdFromToken(req);
+            logger.logInfo("User: " + user_id + "Attempting to retwit")
             const retwit_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+            logger.logInfo("Attemptin to retwit post: "+ retwit_id)
             await this.twitService.retwit(retwit_id,user_id);
             return this.okNoContentResponse(res);
         }catch(e){
@@ -52,9 +54,12 @@ export class TwitController extends Controller{
     }
 
     public like = async (req: Request, res: Response,next: NextFunction) => {
+        logger.logInfo("Liking a Post")
         try{
             const user_id = await this.obtainIdFromToken(req);
+            logger.logInfo("User: " + user_id + "Attempting to like")
             const twit_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+            logger.logInfo("Attempting to like: " + twit_id)
             await this.twitService.likeTwit(twit_id,user_id);
             return this.okNoContentResponse(res);
         }
@@ -64,7 +69,7 @@ export class TwitController extends Controller{
     }
 
     public comment = async (req: Request, res: Response,next: NextFunction) => {
-
+        logger.logInfo("Retwiting a Post")
         try{
             const user_id = await this.obtainIdFromToken(req);
             logger.logInfo("Comment Posted by user: " + user_id)
