@@ -82,6 +82,14 @@
                     "post_id":{
                       "type":"string",
                       "description":"El id del post que se quiere comentar"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "description": "Los tags que se adhieren a este twit",
+                      "items": {
+                        "type": "string",
+                        "description": "Un tag individual"
+                      }
                     }
                   }
                 }
@@ -115,9 +123,43 @@
               "description": "User Posts encontrados"
             }
           }}
-
-
-
-      }
-  }
+      },
+      "/v1/twit/like":{
+        "post": {
+          "summary":"Like a post",
+          "description":"Like a Post",
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "query",
+              "description": "The id of the post",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "responses":{
+            "204": {
+              "description": "Post found"
+            }
+          }}
+      },
+      "/v1/twit/retwit":{
+        "post": {
+          "summary":"Retwit a post",
+          "description":"Like a Post",
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "query",
+              "description": "The id of the post",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "responses":{
+            "204": {
+              "description": "Post found"
+            }
+          }}
+  }}
 }

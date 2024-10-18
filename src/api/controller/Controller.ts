@@ -47,4 +47,9 @@ export abstract class Controller {
         if(!req.body[field]) throw new BadRequestError(`${field} is required`);
         return req.body[field];
     }
+
+    protected getQueryFieldOrBadRequestError = <T>(req: any, field: string): T => {
+        if(!req.query[field]) throw new BadRequestError(`${field} is required`);
+        return req.query[field];
+    }
 }

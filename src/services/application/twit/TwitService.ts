@@ -12,19 +12,27 @@ export class TwitService {
         this.twitRepository = twitRepository;
     }
 
-    public post = async (twit: Twit) =>{
+    public post = async (twit: Twit) => {
         return await this.twitRepository.save(twit);
     }
 
-    public comment = async (comment: CommentQuery) =>{
+    public comment = async (comment: CommentQuery) => {
         return await this.twitRepository.comment_post(comment);
     }
 
-    public getPost = async(id:string) =>{
+    public getPost = async(id: string) => {
         return await this.twitRepository.getById(id);
     }
 
-    public getAllPostsFrom = async(id:string) =>{
+    public getAllPostsFrom = async(id: string) => {
         return await this.twitRepository.getAllByUserId(id);
+    }
+
+    public likeTwit = async (post_id: string, user_id: string) => {
+        return await this.twitRepository.likeTwit(post_id, user_id);
+    }
+
+    public retwit = async (post_id: string, user_id: string) => {
+        return await this.twitRepository.retwit(post_id, user_id);
     }
 }

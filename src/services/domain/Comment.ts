@@ -9,11 +9,12 @@ export class CommentQuery {
 
     private readonly comment_id: string;
 
-    constructor(message: string, postId:string, token:string, comment_id: string = "") {
+    private readonly tags: string[]
+    constructor(message: string, postId:string, token:string, tags: string[]) {
         this.message = message;
         this.post_id = postId;
         this.commenter_token = token;
-        this.comment_id = comment_id;
+        this.tags = tags;
     }
 
     public getMessage = () => {
@@ -30,6 +31,10 @@ export class CommentQuery {
 
     public getCommentId = () => {
         return this.comment_id
+    }
+
+    public getTags = () =>{
+        return this.tags;
     }
 
 

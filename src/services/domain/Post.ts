@@ -1,12 +1,22 @@
 import {Column, Entity, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
 
 export interface OverViewPost {
-    message:string,
-    tags:string[],
-    created_by:string,
-    post_id:string,
-    created_at:string,
-    ammount: number;
+    message: string,
+    tags: string[],
+    created_by: string,
+    post_id: string,
+    created_at: string,
+    is_retweet: boolean,
+    is_comment: boolean,
+    origin_post: string;
+    comment_ammount: number;
+    like_ammount: number,
+    retweet_ammount: number,
+}
+
+export interface Like{
+    post_id: string,
+    likee_user_id: string,
 }
 
 export interface OverViewPosts{
@@ -27,5 +37,11 @@ export interface Post{
     created_by:string,
     post_id:string,
     created_at:string,
-    comments: comment[]
+    comments: OverViewPost[],
+    is_retweet: boolean,
+    is_comment: boolean,
+    origin_post: string;
+    comment_ammount: number;
+    like_ammount: number;
+    retweet_ammount: number,
 }

@@ -23,4 +23,8 @@ export interface TwitRepository {
     comment_post: (comment:CommentQuery) => Promise<EagerResult>
 
     getAllByUserId: (id: string) => Promise<OverViewPosts| null>;
+
+    likeTwit: (post_id: string, user_id: string) => Promise<void>;
+
+    retwit: (post_id: string, user_id: string) => Promise<void>;
 }

@@ -7,6 +7,8 @@ import {InvalidRegisterCredentialsError} from "../services/application/errors/In
 import {ExternalServiceConnectionError} from "../services/application/errors/ExternalServiceConnectionError";
 import {InvalidExternalServiceResponseError} from "../services/application/errors/InvalidExternalServiceResponseError";
 import {ExternalServiceInternalError} from "../services/application/errors/ExternalServiceInternalError";
+import { AlreadyLikedError } from "../db/errors/AlreadyLikeError";
+import { AlreadyRetwitedError } from "../db/errors/AlreadyRetwitedError";
 
 /**
  * A utility class for various helper functions.
@@ -70,8 +72,11 @@ export class Helpers {
         Helpers._errorStatusCodeMap.set(InvalidCredentialsError, StatusCodes.UNAUTHORIZED);
         Helpers._errorStatusCodeMap.set(InvalidRegisterCredentialsError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(BadRequestError, StatusCodes.BAD_REQUEST);
+        Helpers._errorStatusCodeMap.set(AlreadyLikedError, StatusCodes.BAD_REQUEST);
+        Helpers._errorStatusCodeMap.set(AlreadyRetwitedError, StatusCodes.BAD_REQUEST);
         Helpers._errorStatusCodeMap.set(ExternalServiceConnectionError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(InvalidExternalServiceResponseError, StatusCodes.INTERNAL_SERVER_ERROR);
-        Helpers._errorStatusCodeMap.set(ExternalServiceInternalError, StatusCodes.INTERNAL_SERVER_ERROR)
+        Helpers._errorStatusCodeMap.set(ExternalServiceInternalError, StatusCodes.INTERNAL_SERVER_ERROR);
+        
     }
 }
