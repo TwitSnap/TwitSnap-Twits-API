@@ -72,8 +72,8 @@ export class Helpers {
         Helpers._errorStatusCodeMap.set(InvalidCredentialsError, StatusCodes.UNAUTHORIZED);
         Helpers._errorStatusCodeMap.set(InvalidRegisterCredentialsError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(BadRequestError, StatusCodes.BAD_REQUEST);
-        Helpers._errorStatusCodeMap.set(AlreadyLikedError, StatusCodes.BAD_REQUEST);
-        Helpers._errorStatusCodeMap.set(AlreadyRetwitedError, StatusCodes.BAD_REQUEST);
+        Helpers._errorStatusCodeMap.set(AlreadyLikedError, StatusCodes.CONFLICT);
+        Helpers._errorStatusCodeMap.set(AlreadyRetwitedError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(ExternalServiceConnectionError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(InvalidExternalServiceResponseError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(ExternalServiceInternalError, StatusCodes.INTERNAL_SERVER_ERROR);

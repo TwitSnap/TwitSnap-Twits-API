@@ -146,8 +146,26 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             if (reposted_already.records.length > 0){
                 throw new AlreadyRetwitedError("User already retweeted this post");
             }
-
             const original_post = await this.getById(post_id);
+            if (original_post?.created_by === user_id){
+                throw new AlreadyRetwitedError("User Created This Tweet")
+            } 
+            var origin_post;
+            var redirect_post
+            if (original_post?.is_retweet){
+                const own_post = await this.auraRepository.executeQuery('\
+                    MATCH (p:Post {created_by:$user_id,id:$post_id})\
+                    RETURN p',{post_id:original_post.origin_post,user_id:user_id});
+                if (own_post.records.length > 0){
+                    throw new AlreadyLikedError("User cant retweet Own post");
+                }    
+                origin_post = original_post.origin_post;
+                redirect_post = original_post.origin_post;
+            }
+            else{
+                origin_post = post_id;
+                redirect_post = post_id;
+            }
             await this.auraRepository.executeQuery('\
                 CREATE (c:Post {id:randomUUID(),\
                                 created_by:$token,\
@@ -165,8 +183,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             ,{token:user_id,tags:original_post?.tags,message:original_post?.message,
                 is_comment:false,
                 is_retweet:true,
-                origin_post:post_id,
-                post_id:post_id
+                origin_post:origin_post,
+                post_id:redirect_post
             })
             }
 
