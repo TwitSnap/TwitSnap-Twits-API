@@ -24,12 +24,31 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
-             RETURN p.id as post_id,p.message as message,p.created_by as created_by,\
-                    p.tags as tags, p.created_at as created_at,\
-                    p.is_comment as is_comment, p.is_retweet as is_retweet, p.origin_post as origin_post,\
-                    COUNT(DISTINCT like) as ammount_likes, COUNT(DISTINCT retweet) as ammount_retweets, COUNT(DISTINCT reply) as ammount_comments\
+            WITH p, like, reply, retweet,\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                \
+            OPTIONAL MATCH (d:Post {id: originalId})\
+            WITH p, d, like, reply, retweet\
+            WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+            like, reply, retweet\
+            OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+            OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+            OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+            RETURN postData.id AS post_id,\
+                    postData.message AS message,\
+                    postData.created_by AS created_by,\
+                    postData.tags AS tags,\
+                    postData.created_at AS created_at,\
+                    p.is_comment AS is_comment,\
+                    p.is_retweet AS is_retweet,\
+                    p.origin_post AS origin_post,\
+                    COUNT(DISTINCT originalReply) AS ammount_comments,\
+                    COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                    COUNT(DISTINCT originalLike) AS ammount_likes\
+                    ORDER BY postData.created_at DESC\
             ',{id:id})
             const record = ans.records.at(0);
+            // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
             if (!record){
                 throw new BadRequestError("");
             }
@@ -39,13 +58,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 created_by:record.get("created_by"),
                 post_id:record.get("post_id"),
                 created_at:new Date(record.get("created_at")).toISOString(),
-                comments: await this.getComments(id),
+                comments: await this.getComments(record.get("post_id")),
                 is_comment: record.get("is_comment"),
                 is_retweet: record.get("is_retweet"),
                 like_ammount: Number(record.get("ammount_likes")),
                 origin_post: record.get("origin_post"),
                 comment_ammount: Number(record.get("ammount_comments")),
-                retweet_ammount: Number(record.get("ammount_retweets")),
+                retweet_ammount: Number(record.get("ammount_retwits")),
             }
             return post
         };
@@ -107,11 +126,28 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
-            RETURN p.id as post_id,p.message as message,p.created_by as created_by,\
-                    p.tags as tags, p.created_at as created_at,\
-                    p.is_comment as is_comment, p.is_retweet as is_retweet, p.origin_post as origin_post,\
-                    COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes\
-            ORDER BY p.created_at DESC\
+            WITH p, like, reply, retweet,\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                \
+            OPTIONAL MATCH (d:Post {id: originalId})\
+            WITH p, d, like, reply, retweet\
+            WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+            like, reply, retweet\
+            OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+            OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+            OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+            RETURN p.id AS post_id,\
+                    postData.message AS message,\
+                    postData.created_by AS created_by,\
+                    postData.tags AS tags,\
+                    postData.created_at AS created_at,\
+                    p.is_comment AS is_comment,\
+                    p.is_retweet AS is_retweet,\
+                    p.origin_post AS origin_post,\
+                    COUNT(DISTINCT originalReply) AS ammount_comments,\
+                    COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                    COUNT(DISTINCT originalLike) AS ammount_likes\
+                    ORDER BY postData.created_at DESC\
             ',
             {id:id})
             const posts = {posts:await this.formatPosts(result)};
@@ -121,21 +157,29 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         likeTwit = async (post_id: string, user_id:string):  Promise<void> => {
             const liked_already = await this.auraRepository.executeQuery('\
-                MATCH (p:Post {id:$post_id}) -[:LIKED_BY]-> (c:Like {liked_by:$user_id})\
+                MATCH (p:Post {id:$post_id})\
+                WITH p\
+                MATCH (targetPost: Post)\
+                WHERE targetPost.id = \
+                CASE WHEN p.is_retweet = true Then p.origin_post Else p.id END\
+                WITH targetPost\
+                MATCH (tagetPost) - [:LIKED_BY]->(c: Like {liked_by:$user_id})\
                 RETURN c',{post_id:post_id,user_id:user_id});
             if (liked_already.records.length > 0){
                 throw new AlreadyLikedError("The user already like this post");
             }
-            await this.auraRepository.executeQuery('\
+            const like = await this.auraRepository.executeQuery('\
                 CREATE (l:Like {id:randomUUID(),\
                                 liked_by:$user_id,\
                                 liked_at: localdatetime()})\
                 WITH l\
                 MATCH (p:Post {id:$post_id})\
-                CREATE (p)-[:LIKED_BY]->(l)\
+                WITH l, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
+                MATCH (targetPost: Post {id:ID})\
+                CREATE (targetPost)-[:LIKED_BY]->(l)\
                 '
-
             ,{user_id:user_id,post_id:post_id})
+            console.log(like.summary)
             return
         }
 
