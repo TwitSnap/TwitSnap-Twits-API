@@ -107,7 +107,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 })\
                 WITH c\
                 MATCH (p:Post {id:$post_id})\
-                CREATE (p)-[:COMMENTED_BY]->(c)\
+                WITH c,p\
+                MATCH (targetPost: Post)\
+                WHERE targetPost.id = \
+                CASE WHEN targetPost.is_retweet = true THEN p.origin_post ELSE p.id END\
+                CREATE (targetPost)-[:COMMENTED_BY]->(c)\
                 ',
                 {token:comment.getToken(),
                 message:comment.getMessage(),
@@ -163,7 +167,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WHERE targetPost.id = \
                 CASE WHEN p.is_retweet = true Then p.origin_post Else p.id END\
                 WITH targetPost\
-                MATCH (tagetPost) - [:LIKED_BY]->(c: Like {liked_by:$user_id})\
+                MATCH (targetPost) - [:LIKED_BY]->(c: Like {liked_by:$user_id})\
                 RETURN c',{post_id:post_id,user_id:user_id});
             if (liked_already.records.length > 0){
                 throw new AlreadyLikedError("The user already like this post");
@@ -185,7 +189,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         retwit = async (post_id: string, user_id: string): Promise<void> => {
             const reposted_already = await this.auraRepository.executeQuery('\
-                MATCH (p:Post {id:$post_id}) -[:RETWEETED_BY]-> (c:Post {created_by:$user_id})\
+                MATCH (p:Post {id:$post_id})\
+                WITH p\
+                MATCH (targetPost: Post)\
+                WHERE targetPost.id =\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
+                WITH targetPost\
+                MATCH (targetPost)-[:RETWEETED_BY]-> (c:Post {created_by:$user_id})\
                 RETURN c',{post_id:post_id,user_id:user_id});
             if (reposted_already.records.length > 0){
                 throw new AlreadyRetwitedError("User already retweeted this post");
