@@ -1,4 +1,4 @@
-import { twitController } from './../../../utils/container/container';
+import { logger, twitController } from './../../../utils/container/container';
 import { Twit } from './../../domain/Twit';
 import { inject, injectable } from "tsyringe";
 import { TwitRepository } from "../../../db/repositories/interfaces/TwitRepository";
@@ -88,6 +88,7 @@ export class TwitService {
         let users = new Map<string, {username:string,photo:string}>();
         const url = USERS_MS_URI + "/api/v1/users/"
         for (let [idx, post] of posts.entries()){
+            logger.logInfo("Trying to get info from user: "+ post.created_by)
             const request = await axios.get(url+post.created_by).catch(e => this.handleRequestError(e));
             
             if (request){
