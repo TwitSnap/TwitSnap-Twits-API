@@ -10,7 +10,7 @@ router.post("/v1/twit/retwit", twitController.retwit);
 router.post("/v1/twit/comment",twitController.comment);
 router.get("/v1/twit/post", twitController.getPost);
 router.patch("/v1/twit/post",twitController.editPost);
-router.get("/v1/twit/post/comments");
+router.get("/v1/twit/post/comments",twitController.getCommentsFromPost);
 router.get("/v1/twit/posts/user",twitController.getAllPostsFromUser);
 
 

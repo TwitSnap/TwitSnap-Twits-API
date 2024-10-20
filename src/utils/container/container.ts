@@ -12,6 +12,7 @@ import {DataSource} from "typeorm";
 import {LOGGING, LOG_DEBUG, LOG_ERROR, LOG_INFO} from "../config";
 import { TwitRepository } from "../../db/repositories/interfaces/TwitRepository";
 import { TwitController } from "../../api/controller/TwitController";
+import { HttpRequester } from '../../api/external/HttpRequester';
 
 // ? Register all dependencies
 
@@ -23,6 +24,7 @@ container.register<boolean>("logInfo", {useValue: (LOG_INFO === "true") });
 
 container.register<DatabaseConnectorStrategy<DataSource, DataSource>>("DatabaseConnectorStrategy", TypeORMDatabaseConnectorStrategy);
 container.register<TwitRepository>("TwitRepository", AuraTwitRepository);
+container.register<HttpRequester>("HttpRequester",HttpRequester);
 // ? Get instances
 export const logger = container.resolve(Logger);
 export const databaseConnector = container.resolve(DatabaseConnector<DataSource, DataSource>);

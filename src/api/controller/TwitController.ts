@@ -10,6 +10,7 @@ import { HttpResponseSender } from "./HttpResponseSender";
 import axios from 'axios';
 import { AUTH_MS_URI, CLIENT_SECRET } from '../../utils/config';
 import { logger } from '../../utils/container/container';
+import { Pagination } from '../../services/domain/Pagination';
 
 
 @injectable()
@@ -112,8 +113,9 @@ export class TwitController extends Controller{
         try{
             const id = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
             //const id = req.query.user_id as string;
+            const pagination = this.getPagination(req);
             logger.logInfo("Trying to retrieve all post from user: "+ id)
-            const posts = await this.twitService.getAllPostsFrom(id);
+            const posts = await this.twitService.getAllPostsFrom(id,pagination);
             console.log(posts);
             this.okResponse(res,posts);
         }
@@ -127,13 +129,37 @@ export class TwitController extends Controller{
 
     }
 
+    public getCommentsFromPost = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+            const pagination = this.getPagination(req);
+            const comments = await this.twitService.getCommentsFromPost(post_id,pagination);
+            console.log(comments);
+            return this.okResponse(res,comments);
+        }
+        catch(e){
+            next(e)
+        }
+    }
+
     private obtainIdFromToken = async (req:Request) => {
         const header = req.header("Authorization") || "";
         const token = header.split(" ")[1];
         const response =  await axios.post(AUTH_MS_URI+"/v1/auth/decrypt",{
             token:token
         });
+        const id = this.getQueryFieldOrBadRequestError<string>(req,"userId");
         return response.data.user_id;
+    }
+
+    private getPagination = (req: Request) => {
+        const offset = this.getQueryFieldOrBadRequestError<number>(req,"offset");
+        const limit = this.getQueryFieldOrBadRequestError<number>(req,"limit");
+        const pag: Pagination = {
+            offset:offset,
+            limit:limit,
+        }
+        return pag;
     }
 
 }

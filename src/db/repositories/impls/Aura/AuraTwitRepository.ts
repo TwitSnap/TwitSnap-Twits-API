@@ -8,6 +8,7 @@ import { TwitRepository } from "../../interfaces/TwitRepository";
 import { AuraRepository } from "./AuraRepository";
 import { AlreadyLikedError } from '../../../errors/AlreadyLikeError';
 import { AlreadyRetwitedError } from '../../../errors/AlreadyRetwitedError';
+import { Pagination } from '../../../../services/domain/Pagination';
 
 
 
@@ -58,7 +59,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 created_by:record.get("created_by"),
                 post_id:record.get("post_id"),
                 created_at:new Date(record.get("created_at")).toISOString(),
-                comments: await this.getComments(record.get("post_id")),
                 is_comment: record.get("is_comment"),
                 is_retweet: record.get("is_retweet"),
                 like_ammount: Number(record.get("ammount_likes")),
@@ -124,7 +124,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             )
         }
     
-        getAllByUserId = async (id:string): Promise< OverViewPosts |null> =>{
+        getAllByUserId = async (id:string, pagination:Pagination): Promise< OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
@@ -152,8 +152,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                     COUNT(DISTINCT originalLike) AS ammount_likes\
                     ORDER BY postData.created_at DESC\
+            SKIP toInteger($offset)\
+            LIMIT toInteger($limit)\
             ',
-            {id:id})
+            {id:id,offset:pagination.offset,limit:pagination.limit})
             const posts = {posts:await this.formatPosts(result)};
 
             return posts;
@@ -258,26 +260,20 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             origin_post: record.get("origin_post"),
                             like_ammount: Number(record.get("ammount_likes")),
                             retweet_ammount: Number(record.get("ammount_retwits")),
+                            username_creator:null,
+                            photo_creator:null,
+
                         };
                 posts.push(obj)
             }
             return posts;   
         }
 
-        private getAmmountOfComments = async (post_id: string) => {
-            const result = await this.auraRepository.executeQuery('\
-                            MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY*] -> (c:Post)\
-                            RETURN COUNT(c) as ammount\
-            ',{post_id})
-            const record = result.records.at(0)
-
-            if (record){
-                return Number(record.get("ammount"))
-            }
-            return 0;
+        public getCommentsFrom = async (post_id: string, pagination:Pagination): Promise<OverViewPost[]> => {
+            return this.getComments(post_id,pagination);
         }
 
-        private getComments = async (post_id:string) => {
+        private getComments = async (post_id:string, pagination: Pagination) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
@@ -288,7 +284,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                     c.is_comment as is_comment, c.is_retweet as is_retweet, c.origin_post as origin_post,\
                                     COUNT(reply) as ammount_comments, COUNT(retweet) as ammount_retwits, COUNT(like) as ammount_likes\
                             ORDER BY c.created_at DESC\
-                            ',{post_id})
+                            SKIP toInteger($offset)\
+                            LIMIT toInteger($limit)\
+                            ',{post_id,offset:pagination.offset,limit:pagination.limit})
+                            
             let coms = this.formatPosts(query)
             return coms
         }

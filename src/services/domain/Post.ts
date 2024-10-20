@@ -12,6 +12,8 @@ export interface OverViewPost {
     comment_ammount: number;
     like_ammount: number,
     retweet_ammount: number,
+    username_creator:string | null,
+    photo_creator:string | null
 }
 
 export interface Like{
@@ -37,7 +39,6 @@ export interface Post{
     created_by:string,
     post_id:string,
     created_at:string,
-    comments: OverViewPost[],
     is_retweet: boolean,
     is_comment: boolean,
     origin_post: string;
