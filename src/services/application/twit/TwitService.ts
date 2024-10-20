@@ -72,7 +72,7 @@ export class TwitService {
         if(e.response){
             switch (e.response.status) {
                 case HttpStatusCode.NotFound:
-                    throw new InvalidCredentialsError("Invalid credentials.");
+                    throw new InvalidCredentialsError("User Id not found.");
                 default:
                     throw new ExternalServiceInternalError("An external service has had an internal error.");
             }
@@ -89,10 +89,22 @@ export class TwitService {
         const url = USERS_MS_URI + "/api/v1/users/"
         for (let [idx, post] of posts.entries()){
             logger.logInfo("Trying to get info from user: "+ post.created_by)
-            const request = await axios.get(url+post.created_by).catch(e => this.handleRequestError(e));
-            
+            const request = await axios.get(url+post.created_by).catch(e => {
+                logger.logDebugFromEntity(`Attempt HTTP request
+                    ID: ${new Date().toISOString()}
+                    URL: ${url+post.created_by}
+                    Status: ${e.response?.status}
+                    Result: FAILED`
+                , this.constructor);
+                this.handleRequestError(e)
+            });
+            logger.logDebugFromEntity(`Attempt HTTP request
+                ID: ${new Date().toISOString()}
+                URL: ${url+post.created_by}
+                Status: ${request?.status}
+                Result: SUCCESS`
+            , this.constructor);
             if (request){
-                console.log(request.data);
                 posts[idx].photo_creator = request.data.photo;
                 posts[idx].username_creator = request.data.username
                 users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
