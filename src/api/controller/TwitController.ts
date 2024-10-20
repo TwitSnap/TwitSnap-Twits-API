@@ -148,7 +148,7 @@ export class TwitController extends Controller{
         const response =  await axios.post(AUTH_MS_URI+"/v1/auth/decrypt",{
             token:token
         });
-        const id = this.getQueryFieldOrBadRequestError<string>(req,"userId");
+        
         return response.data.user_id;
     }
 
