@@ -86,7 +86,7 @@ export class TwitService {
 
     private getUsersFromPosts = async (posts:OverViewPost[]) => {
         let users = new Map<string, {username:string,photo:string}>();
-        const url = USERS_MS_URI + "api/v1/users/"
+        const url = USERS_MS_URI + "/api/v1/users/"
         for (let [idx, post] of posts.entries()){
             logger.logInfo("Trying to get info from user: "+ post.created_by)
             const request = await axios.get(url+post.created_by).catch(e => {
