@@ -107,10 +107,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 })\
                 WITH c\
                 MATCH (p:Post {id:$post_id})\
-                WITH c,p\
-                MATCH (targetPost: Post)\
-                WHERE targetPost.id = \
-                CASE WHEN targetPost.is_retweet = true THEN p.origin_post ELSE p.id END\
+                WITH c, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
+                MATCH (targetPost: Post {id:ID})\
                 CREATE (targetPost)-[:COMMENTED_BY]->(c)\
                 ',
                 {token:comment.getToken(),

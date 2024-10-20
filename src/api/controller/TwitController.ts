@@ -70,7 +70,7 @@ export class TwitController extends Controller{
     }
 
     public comment = async (req: Request, res: Response,next: NextFunction) => {
-        logger.logInfo("Retwiting a Post")
+        logger.logInfo("Commenting a post")
         try{
             const user_id = await this.obtainIdFromToken(req);
             logger.logInfo("Comment Posted by user: " + user_id)
