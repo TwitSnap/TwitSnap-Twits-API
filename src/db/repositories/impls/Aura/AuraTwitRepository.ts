@@ -46,7 +46,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     COUNT(DISTINCT originalReply) AS ammount_comments,\
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                     COUNT(DISTINCT originalLike) AS ammount_likes\
-                    ORDER BY postData.created_at DESC\
+                    ORDER BY p.created_at DESC\
             ',{id:id})
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
