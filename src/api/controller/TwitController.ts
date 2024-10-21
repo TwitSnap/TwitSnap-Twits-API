@@ -145,6 +145,7 @@ export class TwitController extends Controller{
     }
 
     private obtainIdFromToken = async (req:Request) => {
+        logger.logInfo("Request header is " + JSON.stringify(req.headers));
         const userId = req.headers.userId as string;
         
         if (! userId){
