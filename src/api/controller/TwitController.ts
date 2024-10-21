@@ -144,6 +144,10 @@ export class TwitController extends Controller{
     }
 
     private obtainIdFromToken = async (req:Request) => {
+        console.log(req.headers);
+        console.log(req.params);
+        console.log(req.query);
+        console.log(req.body);
         const header = req.header("Authorization") || "";
         const token = header.split(" ")[1];
         const response =  await axios.post(AUTH_MS_URI+"/v1/auth/decrypt",{

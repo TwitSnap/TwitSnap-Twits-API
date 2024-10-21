@@ -281,11 +281,12 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
+                            WITH p, reply, retweet, like,c\
+                            ORDER BY c.created_at DESC\
                             RETURN c.id as post_id,c.message as message,c.created_by as created_by,\
                                     c.tags as tags, c.created_at as created_at,\
                                     c.is_comment as is_comment, c.is_retweet as is_retweet, c.origin_post as origin_post,\
-                                    COUNT(reply) as ammount_comments, COUNT(retweet) as ammount_retwits, COUNT(like) as ammount_likes\
-                            ORDER BY c.created_at DESC\
+                                    COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes\
                             SKIP toInteger($offset)\
                             LIMIT toInteger($limit)\
                             ',{post_id,offset:pagination.offset,limit:pagination.limit})
