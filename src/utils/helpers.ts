@@ -9,6 +9,7 @@ import {InvalidExternalServiceResponseError} from "../services/application/error
 import {ExternalServiceInternalError} from "../services/application/errors/ExternalServiceInternalError";
 import { AlreadyLikedError } from "../db/errors/AlreadyLikeError";
 import { AlreadyRetwitedError } from "../db/errors/AlreadyRetwitedError";
+import { UserIdMissingError } from "../api/errors/UserIdMissingError";
 
 /**
  * A utility class for various helper functions.
@@ -72,6 +73,7 @@ export class Helpers {
         Helpers._errorStatusCodeMap.set(InvalidCredentialsError, StatusCodes.UNAUTHORIZED);
         Helpers._errorStatusCodeMap.set(InvalidRegisterCredentialsError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(BadRequestError, StatusCodes.BAD_REQUEST);
+        Helpers._errorStatusCodeMap.set(UserIdMissingError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(AlreadyLikedError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(AlreadyRetwitedError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(ExternalServiceConnectionError, StatusCodes.INTERNAL_SERVER_ERROR);

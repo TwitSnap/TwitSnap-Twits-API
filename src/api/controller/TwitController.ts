@@ -11,6 +11,7 @@ import axios from 'axios';
 import { AUTH_MS_URI, CLIENT_SECRET } from '../../utils/config';
 import { logger } from '../../utils/container/container';
 import { Pagination } from '../../services/domain/Pagination';
+import { UserIdMissingError } from '../errors/UserIdMissingError';
 
 
 @injectable()
@@ -144,17 +145,13 @@ export class TwitController extends Controller{
     }
 
     private obtainIdFromToken = async (req:Request) => {
-        logger.logInfo(JSON.stringify(req.query));
-        logger.logInfo(JSON.stringify(req.headers));
-        logger.logInfo(JSON.stringify(req.params));
-        logger.logInfo(JSON.stringify(req.header));
-        const header = req.header("Authorization") || "";
-        const token = header.split(" ")[1];
-        const response =  await axios.post(AUTH_MS_URI+"/v1/auth/decrypt",{
-            token:token
-        });
+        const userId = req.headers.userId as string;
         
-        return response.data.user_id;
+        if (! userId){
+            throw new UserIdMissingError("UserId Empty");
+        }
+        logger.logInfo("Received User ID: " + userId +" From GateWay");
+        return userId;
     }
 
     private getPagination = (req: Request) => {
