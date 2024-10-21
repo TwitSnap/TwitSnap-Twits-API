@@ -19,7 +19,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         /**
      * @inheritDoc
      */
-        getById = async (id: string): Promise<Post | null> => {
+        getById = async (id: string): Promise<OverViewPost | null> => {
             const ans = await this.auraRepository.executeQuery('\
             MATCH (p:Post {id:$id})\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
@@ -35,6 +35,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+            ORDER BY p.created_at DESC\
             RETURN postData.id AS post_id,\
                     postData.message AS message,\
                     postData.created_by AS created_by,\
@@ -46,14 +48,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     COUNT(DISTINCT originalReply) AS ammount_comments,\
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                     COUNT(DISTINCT originalLike) AS ammount_likes\
-                    ORDER BY p.created_at DESC\
             ',{id:id})
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
             if (!record){
                 throw new BadRequestError("");
             }
-            const post: Post = {
+            const post: OverViewPost = {
                 message:record.get("message"),
                 tags:record.get("tags"),
                 created_by:record.get("created_by"),
@@ -65,6 +66,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 origin_post: record.get("origin_post"),
                 comment_ammount: Number(record.get("ammount_comments")),
                 retweet_ammount: Number(record.get("ammount_retwits")),
+                username_creator:null,
+                photo_creator:null,
             }
             return post
         };
@@ -138,6 +141,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+            ORDER BY p.created_at DESC\
             RETURN p.id AS post_id,\
                     postData.message AS message,\
                     postData.created_by AS created_by,\
@@ -149,7 +154,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     COUNT(DISTINCT originalReply) AS ammount_comments,\
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                     COUNT(DISTINCT originalLike) AS ammount_likes\
-                    ORDER BY postData.created_at DESC\
             SKIP toInteger($offset)\
             LIMIT toInteger($limit)\
             ',

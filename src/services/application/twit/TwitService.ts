@@ -31,7 +31,17 @@ export class TwitService {
     }
 
     public getPost = async(id: string) => {
-        return await this.twitRepository.getById(id);
+        const post = await this.twitRepository.getById(id);
+        if (post){
+            const user = await this.getRequestForUser(USERS_MS_URI+ "/api/v1/users/" + post.created_by);
+            if (user){
+                post.photo_creator = user.data.photo;
+                post.username_creator = user.data.username;
+            }
+
+        }
+       
+        return post;
     }
 
     public getAllPostsFrom = async(id: string,pagination:Pagination) => {
@@ -88,22 +98,7 @@ export class TwitService {
         let users = new Map<string, {username:string,photo:string}>();
         const url = USERS_MS_URI + "/api/v1/users/"
         for (let [idx, post] of posts.entries()){
-            logger.logInfo("Trying to get info from user: "+ post.created_by)
-            const request = await axios.get(url+post.created_by).catch(e => {
-                logger.logDebugFromEntity(`Attempt HTTP request
-                    ID: ${new Date().toISOString()}
-                    URL: ${url+post.created_by}
-                    Status: ${e.response?.status}
-                    Result: FAILED`
-                , this.constructor);
-                this.handleRequestError(e)
-            });
-            logger.logDebugFromEntity(`Attempt HTTP request
-                ID: ${new Date().toISOString()}
-                URL: ${url+post.created_by}
-                Status: ${request?.status}
-                Result: SUCCESS`
-            , this.constructor);
+            const request = await this.getRequestForUser(url+post.created_by)
             if (request){
                 posts[idx].photo_creator = request.data.photo;
                 posts[idx].username_creator = request.data.username
@@ -111,5 +106,25 @@ export class TwitService {
             }
         }
         return users;
+    }
+
+    private getRequestForUser = async (url:string) => {
+        logger.logInfo("Trying to get info from user: "+ url)
+        const request = await axios.get(url).catch(e => {
+            logger.logDebugFromEntity(`Attempt HTTP request
+                ID: ${new Date().toISOString()}
+                URL: ${url}
+                Status: ${e.response?.status}
+                Result: FAILED`
+            , this.constructor);
+            this.handleRequestError(e)
+        });
+        logger.logDebugFromEntity(`Attempt HTTP request
+            ID: ${new Date().toISOString()}
+            URL: ${url}
+            Status: ${request?.status}
+            Result: SUCCESS`
+        , this.constructor);
+        return request
     }
 }

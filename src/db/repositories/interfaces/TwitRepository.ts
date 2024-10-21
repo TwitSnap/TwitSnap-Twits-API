@@ -11,7 +11,7 @@ export interface TwitRepository {
      * @param id - The unique identifier of the User.
      * @returns A promise that resolves to the `User` entity if found, or `null` if not found.
      */
-    getById: (id: string) => Promise<Post | null>;
+    getById: (id: string) => Promise<OverViewPost | null>;
 
     /**
      * Saves a new or existing `User` entity to the storage.

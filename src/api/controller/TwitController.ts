@@ -98,6 +98,7 @@ export class TwitController extends Controller{
             }
             const id = this.getQueryFieldOrBadRequestError<string>(req,"id");
             //const id = req.query.id as string;
+            logger.logInfo("Getting info of post: " + id);
             const post = await this.twitService.getPost(id);
             console.log(post);
             this.okResponse(res,post);

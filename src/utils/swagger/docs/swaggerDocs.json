@@ -47,7 +47,7 @@
       "/v1/twit/post": {
         "get": {
           "summary":"Get a post with all the comments",
-          "description":"Get a Post by id with all the comments",
+          "description":"Get a Post by id",
           "parameters": [
             {
               "name": "id",
@@ -55,20 +55,6 @@
               "description": "The id of the post",
               "required": false,
               "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
             }
           ],
           "responses":{
