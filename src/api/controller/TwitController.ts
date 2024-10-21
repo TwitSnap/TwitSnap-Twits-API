@@ -146,10 +146,10 @@ export class TwitController extends Controller{
 
     private obtainIdFromToken = async (req:Request) => {
         logger.logInfo("Request header is " + JSON.stringify(req.headers));
-        const userId = req.headers.userId as string;
+        const userId = req.headers.user_id as string;
         
         if (! userId){
-            throw new UserIdMissingError("UserId Empty");
+            throw new UserIdMissingError("userid Empty");
         }
         logger.logInfo("Received User ID: " + userId +" From GateWay");
         return userId;
