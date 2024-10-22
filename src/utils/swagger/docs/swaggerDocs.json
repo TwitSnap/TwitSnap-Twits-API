@@ -220,20 +220,6 @@
               "description": "Periodo",
               "required": false,
               "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
             }
           ],
           "responses":{
