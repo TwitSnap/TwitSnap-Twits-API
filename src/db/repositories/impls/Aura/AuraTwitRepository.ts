@@ -275,7 +275,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         public getFeedFor = async (user_id: string, pagination: Pagination): Promise<OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
-                MATCH (p:Post)\
+                MATCH (p:Post {is_comment:false})\
                 WHERE p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -291,7 +291,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
-                RETURN p.id AS post_id,\
+                RETURN DISTINCT postData.id AS post_id,\
                         postData.message AS message,\
                         postData.created_by AS created_by,\
                         postData.tags AS tags,\
