@@ -3,6 +3,7 @@ import { EagerResult } from 'neo4j-driver';
 import { CommentQuery } from '../../../services/domain/Comment';
 import { Twit } from "../../../services/domain/Twit";
 import { Pagination } from '../../../services/domain/Pagination';
+import { Stats } from '../../../services/domain/Stats';
 
 export interface TwitRepository {
     /**
@@ -30,4 +31,6 @@ export interface TwitRepository {
     retwit: (post_id: string, user_id: string) => Promise<void>;
 
     getCommentsFrom: (post_id: string, pagination: Pagination) => Promise<OverViewPost[]>
+
+    getStatsFromPeriod: (user_id: string, period: string) => Promise<Stats>;
 }

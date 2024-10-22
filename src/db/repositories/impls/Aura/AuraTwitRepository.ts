@@ -9,6 +9,7 @@ import { AuraRepository } from "./AuraRepository";
 import { AlreadyLikedError } from '../../../errors/AlreadyLikeError';
 import { AlreadyRetwitedError } from '../../../errors/AlreadyRetwitedError';
 import { Pagination } from '../../../../services/domain/Pagination';
+import { Stats } from '../../../../services/domain/Stats';
 
 
 
@@ -244,7 +245,29 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 origin_post:origin_post,
                 post_id:redirect_post
             })
+        }
+
+        getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
+            const result = await this.auraRepository.executeQuery('\
+                MATCH (p:Post {created_by: $userId})\
+                OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+                    WHERE like.created_at > localdatetime() - duration($period)\
+                OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+                    WHERE reply.created_at > localdatetime() - duration($period)\
+                OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+                    WHERE retweet.created_at > localdatetime() - duration($period)\
+                RETURN COUNT(DISTINCT like) as ammount_likes,\
+                        COUNT(DISTINCT retweet) as ammount_retweets,\
+                        COUNT(DISTINCT reply) as ammount_comments\
+                ',{userId:user_id,period:period})
+            const record = result.records.at(0);
+            const stats: Stats = {
+                likes: Number(record?.get("ammount_likes")),
+                comments: Number(record?.get("ammount_comments")),
+                shares: Number(record?.get("ammount_retweets"))
             }
+            return stats;
+        }
 
         private formatPosts = async (result: EagerResult) => {
             const records = result.records;

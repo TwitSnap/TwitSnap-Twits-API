@@ -70,6 +70,12 @@ export class TwitService {
         return comments;
     }
 
+    public getStatsFromPeriod = async (userId: string, period: string) => {
+        const per = "P"+period
+        const stats = await this.twitRepository.getStatsFromPeriod(userId, per);
+        return stats;
+    }
+
        /**
      * Handles errors related to the external HTTP request.
      * @param {any} e - The error object from the failed request.

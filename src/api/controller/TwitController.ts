@@ -144,6 +144,29 @@ export class TwitController extends Controller{
         }
     }
 
+    public deletePost = async (req:Request, res:Response, next: NextFunction) => {
+        try{
+            const userId = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+        }
+        catch(e){
+            next(e);
+        }
+    }
+
+    public getStats = async(req: Request, res: Response, next: NextFunction) =>{
+        try{
+            const userId = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const period = this.getQueryFieldOrBadRequestError<string>(req,"period");
+            const result = await this.twitService.getStatsFromPeriod(userId, period);
+            console.log(result);
+            return this.okResponse(res,result);
+        }
+        catch(e){
+            next(e);
+        }
+    }
+
     private obtainIdFromToken = async (req:Request) => {
         logger.logInfo("Request header is " + JSON.stringify(req.headers));
         const userId = req.headers.user_id as string;
