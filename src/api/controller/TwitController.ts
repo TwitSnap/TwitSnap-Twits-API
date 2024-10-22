@@ -161,7 +161,7 @@ export class TwitController extends Controller{
 
     public getStats = async(req: Request, res: Response, next: NextFunction) =>{
         try{
-            const userId = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const userId = await this.obtainIdFromToken(req);
             const period = this.getQueryFieldOrBadRequestError<string>(req,"period");
             const result = await this.twitService.getStatsFromPeriod(userId, period);
             console.log(result);
@@ -174,7 +174,7 @@ export class TwitController extends Controller{
 
     public getFeed = async (req: Request, res: Response, next: NextFunction) => {
         try{
-            const user_id = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const user_id = await this.obtainIdFromToken(req);
             const pagination = this.getPagination(req);
             const result = await this.twitService.getFeedFor(user_id,pagination);
             return this.okResponse(res,result);

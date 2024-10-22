@@ -46,7 +46,7 @@
       },
       "/v1/twit/post": {
         "get": {
-          "summary":"Get a post with all the comments",
+          "summary":"Obtener un post",
           "description":"Get a Post by id",
           "parameters": [
             {
@@ -178,7 +178,7 @@
       },
       "/v1/twit/post/comments":{
         "get": {
-          "summary": "Obtener todos los posts de un usuario",
+          "summary": "Obtener todos los comentarios de un post",
           "description": "Use this endpoint to authenticate user.",
           "parameters": [
             {
@@ -188,6 +188,65 @@
               "required": false,
               "type": "string"
             },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "User Posts encontrados"
+            }
+          }}
+      },
+      "/v1/twit/user/stats":{
+        "get": {
+          "summary": "Obtener las estadisticas de un usuarion en un cierto periodo",
+          "description": "Use this endpoint to authenticate user.",
+          "parameters": [
+            {
+              "name": "periodo",
+              "in": "query",
+              "description": "Periodo",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "User Posts encontrados"
+            }
+          }}
+      },
+      "/v1/twit/feed":{
+        "get": {
+          "summary": "Obtener el feed de un usuario",
+          "description": "Use this endpoint to authenticate user.",
+          "parameters": [
             {
               "name": "offset",
               "in": "query",
