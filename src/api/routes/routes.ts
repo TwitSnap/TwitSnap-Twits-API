@@ -14,6 +14,7 @@ router.delete("/v1/twit/post",twitController.deletePost);
 router.get("/v1/twit/post/comments",twitController.getCommentsFromPost);
 router.get("/v1/twit/posts/user",twitController.getAllPostsFromUser);
 router.get("/v1/twit/user/stats",twitController.getStats);
+router.get("/v1/twit/feed",twitController.getFeed);
 
 
 export default router;

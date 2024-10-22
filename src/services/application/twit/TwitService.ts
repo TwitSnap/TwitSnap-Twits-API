@@ -33,7 +33,7 @@ export class TwitService {
     public getPost = async(id: string) => {
         const post = await this.twitRepository.getById(id);
         if (post){
-            const user = await this.getRequestForUser(USERS_MS_URI+ "/api/v1/users/" + post.created_by);
+            const user = await this.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",post.created_by);
             if (user){
                 post.photo_creator = user.data.photo;
                 post.username_creator = user.data.username;
@@ -76,6 +76,14 @@ export class TwitService {
         return stats;
     }
 
+    public getFeedFor = async (user_id: string, pagination: Pagination) => {
+        //TODO: Agregar un Field que me permita saber los followers y sacar post de ellos primero
+        // Si el feed esta vacio busco los mas importantes del dia
+        const feed = await this.twitRepository.getFeedFor(user_id, pagination);
+        let posts = feed?.posts
+        await this.getUsersFromPosts(posts);
+        return {posts:posts};
+    }
        /**
      * Handles errors related to the external HTTP request.
      * @param {any} e - The error object from the failed request.
@@ -103,20 +111,32 @@ export class TwitService {
     private getUsersFromPosts = async (posts:OverViewPost[]) => {
         let users = new Map<string, {username:string,photo:string}>();
         const url = USERS_MS_URI + "/api/v1/users/"
-        for (let [idx, post] of posts.entries()){
-            const request = await this.getRequestForUser(url+post.created_by)
+        for await (let [idx, post] of posts.entries()){
+            const request = await this.getRequestForUser(url,post.created_by)
             if (request){
                 posts[idx].photo_creator = request.data.photo;
                 posts[idx].username_creator = request.data.username
                 users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
             }
         }
+           /*
+        await Promise.all(posts.map(async (file) => {
+            const contents = await this.getRequestForUser(url,file.created_by)
+            if (contents){
+                file.photo_creator = contents.data.photo;
+                file.username_creator = contents.data.username
+            }
+
+            console.log(contents)
+          }));
+          */
         return users;
     }
 
-    private getRequestForUser = async (url:string) => {
+    private getRequestForUser = async (url:string,id: string) => {
+        url = url+id;
         logger.logInfo("Trying to get info from user: "+ url)
-        const request = await axios.get(url).catch(e => {
+        const request = await axios.get(url,{ headers: { user_id:id}}).catch(e => {
             logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${url}

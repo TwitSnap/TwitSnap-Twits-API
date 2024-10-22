@@ -33,4 +33,6 @@ export interface TwitRepository {
     getCommentsFrom: (post_id: string, pagination: Pagination) => Promise<OverViewPost[]>
 
     getStatsFromPeriod: (user_id: string, period: string) => Promise<Stats>;
+
+    getFeedFor: (user_id: string, pagination: Pagination) => Promise<OverViewPosts>;
 }

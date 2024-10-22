@@ -269,6 +269,48 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return stats;
         }
 
+        public getCommentsFrom = async (post_id: string, pagination:Pagination): Promise<OverViewPost[]> => {
+            return this.getComments(post_id,pagination);
+        }
+
+        public getFeedFor = async (user_id: string, pagination: Pagination): Promise<OverViewPosts> =>{
+            const result= await this.auraRepository.executeQuery('\
+                MATCH (p:Post)\
+                WHERE p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
+                OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+                OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+                OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+                WITH p, like, reply, retweet,\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                    \
+                OPTIONAL MATCH (d:Post {id: originalId})\
+                WITH p, d, like, reply, retweet\
+                WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+                like, reply, retweet\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+                RETURN p.id AS post_id,\
+                        postData.message AS message,\
+                        postData.created_by AS created_by,\
+                        postData.tags AS tags,\
+                        postData.created_at AS created_at,\
+                        p.is_comment AS is_comment,\
+                        p.is_retweet AS is_retweet,\
+                        p.origin_post AS origin_post,\
+                        COUNT(DISTINCT originalReply) AS ammount_comments,\
+                        COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                        COUNT(DISTINCT originalLike) AS ammount_likes\
+                ORDER BY ammount_likes DESC\
+                SKIP toInteger($offset)\
+                LIMIT toInteger($limit)\
+                ',
+                {user_id:user_id,offset:pagination.offset,limit:pagination.limit})
+                const posts = {posts:await this.formatPosts(result)};
+                return posts;
+        }
+
         private formatPosts = async (result: EagerResult) => {
             const records = result.records;
             let posts = []
@@ -294,9 +336,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return posts;   
         }
 
-        public getCommentsFrom = async (post_id: string, pagination:Pagination): Promise<OverViewPost[]> => {
-            return this.getComments(post_id,pagination);
-        }
 
         private getComments = async (post_id:string, pagination: Pagination) => {
             const query = await this.auraRepository.executeQuery('\

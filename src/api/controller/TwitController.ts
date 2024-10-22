@@ -128,7 +128,12 @@ export class TwitController extends Controller{
     }
 
     public editPost = async (req: Request, res: Response,next: NextFunction) =>{
+        try{
 
+        }
+        catch(e){
+            next(e)
+        }
     }
 
     public getCommentsFromPost = async (req: Request, res: Response, next: NextFunction) => {
@@ -164,6 +169,18 @@ export class TwitController extends Controller{
         }
         catch(e){
             next(e);
+        }
+    }
+
+    public getFeed = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const pagination = this.getPagination(req);
+            const result = await this.twitService.getFeedFor(user_id,pagination);
+            return this.okResponse(res,result);
+        }
+        catch(e){
+            next(e)
         }
     }
 
