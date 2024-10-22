@@ -163,8 +163,9 @@ export class TwitController extends Controller{
         try{
             const userId = await this.obtainIdFromToken(req);
             const period = this.getQueryFieldOrBadRequestError<string>(req,"period");
+            logger.logInfo("Se intenta buscar los stats del usuario " + userId)
             const result = await this.twitService.getStatsFromPeriod(userId, period);
-            console.log(result);
+            logger.logInfo(JSON.stringify(result));
             return this.okResponse(res,result);
         }
         catch(e){
@@ -176,7 +177,9 @@ export class TwitController extends Controller{
         try{
             const user_id = await this.obtainIdFromToken(req);
             const pagination = this.getPagination(req);
+            logger.logInfo("Se intenta Buscar el feed del usuario: " + user_id)
             const result = await this.twitService.getFeedFor(user_id,pagination);
+            logger.logInfo(JSON.stringify(result));
             return this.okResponse(res,result);
         }
         catch(e){
