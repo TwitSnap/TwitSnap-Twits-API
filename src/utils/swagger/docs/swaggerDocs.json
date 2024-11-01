@@ -27,6 +27,10 @@
                         "type": "string",
                         "description": "Un tag individual"
                       }
+                    },
+                    "is_private":{
+                      "type": "boolean",
+                      "description": "Si es o no privado un post"
                     }
                   }
                 }
