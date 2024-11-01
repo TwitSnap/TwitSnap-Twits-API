@@ -96,6 +96,7 @@ export class TwitService {
         let posts = feed?.posts
         
         if (posts.length < pagination.limit){
+            pagination.offset = 0;
             const importance = await this.twitRepository.getFeedByImportance(user_id,pagination,list_following);
             importance.posts.forEach(post => {
                 posts.push(post);
