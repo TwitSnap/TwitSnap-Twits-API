@@ -11,6 +11,7 @@ import { InvalidCredentialsError } from '../errors/InvalidCredentialsError';
 import { ExternalServiceConnectionError } from '../errors/ExternalServiceConnectionError';
 import { HttpRequester } from '../../../api/external/HttpRequester';
 import { USERS_MS_URI } from '../../../utils/config';
+import { UserIdMissingError } from '../../../api/errors/UserIdMissingError';
 
 @injectable()
 export class TwitService {
@@ -44,9 +45,16 @@ export class TwitService {
         return post;
     }
 
-    public getAllPostsFrom = async(id: string,pagination:Pagination) => {
-        
-        let overview = await this.twitRepository.getAllByUserId(id,pagination);
+    public getAllPostsFrom = async(id: string,pagination:Pagination, op_id:string) => {
+        let followers_of_op: Array<any> = await this.getAllFollowingOf(op_id);
+        let is_prohibited = true;
+        followers_of_op.forEach(element => {
+            if (element.uid === id){
+                is_prohibited = false;
+            }
+        });
+        logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
+        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
 
@@ -79,8 +87,21 @@ export class TwitService {
     public getFeedFor = async (user_id: string, pagination: Pagination) => {
         //TODO: Agregar un Field que me permita saber los followers y sacar post de ellos primero
         // Si el feed esta vacio busco los mas importantes del dia
-        const feed = await this.twitRepository.getFeedFor(user_id, pagination);
+        const following: Array<any> = await this.getAllFollowingOf(user_id);
+        const list_following = following.map(user => {
+            return user.uid;
+        })
+        logger.logDebug("Los usuarios que sigue " + user_id + "son" + list_following)
+        const feed = await this.twitRepository.getFeedFor(user_id, pagination,list_following);
         let posts = feed?.posts
+        
+        if (posts.length < pagination.limit){
+            const importance = await this.twitRepository.getFeedByImportance(user_id,pagination,list_following);
+            importance.posts.forEach(post => {
+                posts.push(post);
+            })
+        }
+        posts.length = Math.min(pagination.limit,posts.length);
         await this.getUsersFromPosts(posts);
         return {posts:posts};
     }
@@ -112,12 +133,24 @@ export class TwitService {
         let users = new Map<string, {username:string,photo:string}>();
         const url = USERS_MS_URI + "/api/v1/users/"
         for await (let [idx, post] of posts.entries()){
-            const request = await this.getRequestForUser(url,post.created_by)
-            if (request){
-                posts[idx].photo_creator = request.data.photo;
-                posts[idx].username_creator = request.data.username
-                users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
+            try{
+                const request = await this.getRequestForUser(url,post.created_by)
+                if (request){
+                    posts[idx].photo_creator = request.data.photo;
+                    posts[idx].username_creator = request.data.username
+                    users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
+                }
             }
+            catch(e){
+                if (e instanceof InvalidCredentialsError) {
+                    posts[idx].username_creator = "DELETED";
+                    continue;
+                   } else {
+                     throw e; // let others bubble up
+                   }
+            }
+
+           
         }
            /*
         await Promise.all(posts.map(async (file) => {
@@ -152,5 +185,28 @@ export class TwitService {
             Result: SUCCESS`
         , this.constructor);
         return request
+    }
+
+    private getAllFollowingOf = async (id:string) => {
+        const url = USERS_MS_URI + "/api/v1/users/" + id + "/following"
+        const request = await axios.get(url, {headers: {user_id:id}}).catch(e => {
+            logger.logDebugFromEntity(`Attempt HTTP request
+                ID: ${new Date().toISOString()}
+                URL: ${url}
+                Status: ${e.response?.status}
+                Result: FAILED`
+            , this.constructor);
+            this.handleRequestError(e)
+        });
+        logger.logDebugFromEntity(`Attempt HTTP request
+            ID: ${new Date().toISOString()}
+            URL: ${url}
+            Status: ${request?.status}
+            Result: SUCCESS`
+        , this.constructor);
+        if (request){
+            return request.data.following;
+        }
+        return [];
     }
 }

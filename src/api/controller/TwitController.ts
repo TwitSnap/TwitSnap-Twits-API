@@ -30,7 +30,8 @@ export class TwitController extends Controller{
             logger.logInfo("Posted Twit from user: " + user_id)
             const t_tags = this.getFieldOrBadRequestError<string[]>(req,"tags")
             const t_body = this.getFieldOrBadRequestError<string>(req,"body")
-            const body = new Twit(t_body,t_tags,user_id);
+            const is_private = this.getFieldOrBadRequestError<boolean>(req,"is_private");
+            const body = new Twit(t_body,t_tags,user_id,is_private);
             const {records,summary} =  await this.twitService.post(body);
             console.log(summary);
             this.okNoContentResponse(res);
@@ -113,11 +114,12 @@ export class TwitController extends Controller{
     public getAllPostsFromUser = async (req: Request, res: Response,next: NextFunction) => {
         
         try{
+            const op_id = await this.obtainIdFromToken(req);
             const id = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
             //const id = req.query.user_id as string;
             const pagination = this.getPagination(req);
             logger.logInfo("Trying to retrieve all post from user: "+ id)
-            const posts = await this.twitService.getAllPostsFrom(id,pagination);
+            const posts = await this.twitService.getAllPostsFrom(id,pagination,op_id);
             console.log(posts);
             this.okResponse(res,posts);
         }

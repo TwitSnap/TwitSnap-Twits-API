@@ -13,7 +13,8 @@ export interface OverViewPost {
     like_ammount: number,
     retweet_ammount: number,
     username_creator:string | null,
-    photo_creator:string | null
+    photo_creator:string | null,
+    is_private: boolean,
 }
 
 export interface Like{
