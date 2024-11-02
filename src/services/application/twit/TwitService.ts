@@ -53,6 +53,9 @@ export class TwitService {
                 is_prohibited = false;
             }
         });
+        if (id === op_id){
+            is_prohibited = false;
+        }
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
         let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited);
         let posts = overview?.posts
