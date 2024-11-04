@@ -287,7 +287,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const result= await this.auraRepository.executeQuery('\
                 MATCH (p:Post {is_comment:false})\
                 WHERE p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
-                        AND NOT p.is_private OR p.created_by IN $idList \
+                        AND (p.created_by IN $idList) \
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -327,7 +327,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const result= await this.auraRepository.executeQuery('\
                 MATCH (p:Post {is_comment:false})\
                 WHERE p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
-                        AND p.is_private = false AND NOT p.created_by IN $idList \
+                        AND (NOT p.is_private AND NOT p.created_by IN $idList) \
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\

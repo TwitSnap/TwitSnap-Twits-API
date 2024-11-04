@@ -12,6 +12,7 @@ import { ExternalServiceConnectionError } from '../errors/ExternalServiceConnect
 import { HttpRequester } from '../../../api/external/HttpRequester';
 import { USERS_MS_URI } from '../../../utils/config';
 import { UserIdMissingError } from '../../../api/errors/UserIdMissingError';
+import { log } from 'winston';
 
 @injectable()
 export class TwitService {
@@ -97,14 +98,16 @@ export class TwitService {
         logger.logDebug("Los usuarios que sigue " + user_id + "son" + list_following)
         const feed = await this.twitRepository.getFeedFor(user_id, pagination,list_following);
         let posts = feed?.posts
-        
+        logger.logInfo("La cantidad de twits de seguidores es: "+ posts.length);
         if (posts.length < pagination.limit){
+            logger.logInfo("Se busca los twits de mayor importancia");
             pagination.offset = 0;
             const importance = await this.twitRepository.getFeedByImportance(user_id,pagination,list_following);
             importance.posts.forEach(post => {
                 posts.push(post);
             })
         }
+        logger.logInfo("Luego de buscar los twits de mayo importancia obtengo: " + posts.length)
         posts.length = Math.min(pagination.limit,posts.length);
         await this.getUsersFromPosts(posts);
         return {posts:posts};
