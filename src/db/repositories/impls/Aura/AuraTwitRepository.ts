@@ -104,20 +104,20 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         comment_post = async (comment: CommentQuery): Promise<EagerResult> =>{
             return await this.auraRepository.executeQuery(
-                'CREATE (c:Post {id:randomUUID(),\
+                'MATCH (p:Post {id:$post_id})\
+                WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
+                MATCH (targetPost: Post {id:ID})\
+                CREATE (c:Post {id:randomUUID(),\
                                 created_by:$token,\
                                 tags:$tags,\
                                 message:$message, \
                                 created_at: localdatetime(),\
                                 is_comment: $is_comment,\
                                 is_retweet: $is_retweet,\
-                                origin_post: $origin_post\
-                                is_private: $is_private\
+                                origin_post: $origin_post,\
+                                is_private: targetPost.is_private\
                 })\
-                WITH c\
-                MATCH (p:Post {id:$post_id})\
-                WITH c, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
-                MATCH (targetPost: Post {id:ID})\
+                WITH c, targetPost\
                 CREATE (targetPost)-[:COMMENTED_BY]->(c)\
                 ',
                 {token:comment.getToken(),

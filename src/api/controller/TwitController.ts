@@ -27,12 +27,19 @@ export class TwitController extends Controller{
 
         try{
             const user_id  = await this.obtainIdFromToken(req);
-            logger.logInfo("Posted Twit from user: " + user_id)
             const t_tags = this.getFieldOrBadRequestError<string[]>(req,"tags")
             const t_body = this.getFieldOrBadRequestError<string>(req,"body")
-            const is_private = this.getFieldOrBadRequestError<boolean>(req,"is_private");
+            var is_private;
+            if (req.body.is_private){
+                is_private = this.getFieldOrBadRequestError<boolean>(req,"is_private");
+            }
+            else{
+                is_private = false;
+            }
             const body = new Twit(t_body,t_tags,user_id,is_private);
+            
             const {records,summary} =  await this.twitService.post(body);
+            logger.logInfo("Posted Twit from user: " + user_id)
             console.log(summary);
             this.okNoContentResponse(res);
             return;
