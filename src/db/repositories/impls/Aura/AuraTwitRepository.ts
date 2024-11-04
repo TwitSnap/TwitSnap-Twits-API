@@ -261,7 +261,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const result = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {created_by: $userId})\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
-                    WHERE like.created_at > localdatetime() - duration($period)\
+                    WHERE like.liked_at > localdatetime() - duration($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                     WHERE reply.created_at > localdatetime() - duration($period)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
