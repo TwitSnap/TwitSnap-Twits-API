@@ -65,8 +65,91 @@
             "200": {
               "description": "Post found"
             }
-          }}
+          }},
+          "patch": {
+            "summary": "Editar un post",
+            "description": "Editar un post",
+            "requestBody": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "body":{
+                        "type":"string",
+                        "description": "The user comment."
+                      },
+                      "post_id":{
+                        "type":"string",
+                        "description":"El id del post que se quiere comentar"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "description": "Los tags que se adhieren a este twit",
+                        "items": {
+                          "type": "string",
+                          "description": "Un tag individual"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
 
+      },
+      "/v1/twit/favorite": {
+        "post": {
+          "summary":"Agregar a Favoritos un post",
+          "description":"Get a Post by id",
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "query",
+              "description": "The id of the post",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "responses":{
+            "200": {
+              "description": "Post found"
+            }
+          }
+        },
+        "get": {
+          "summary":"Obtener todos los favoritos de un usuario",
+          "description":"Obtener favoritos de un usuario",
+          "parameters": [
+            {
+              "name": "user",
+              "in": "query",
+              "description": "The id of the post",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200": {
+              "description": "Post found"
+            }
+          }
+        }
       },
       "/v1/twit/comment":{
 

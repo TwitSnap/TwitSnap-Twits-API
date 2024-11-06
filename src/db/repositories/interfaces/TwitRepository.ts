@@ -1,7 +1,7 @@
 import { OverViewPost, OverViewPosts, Post } from './../../../services/domain/Post';
 import { EagerResult } from 'neo4j-driver';
 import { CommentQuery } from '../../../services/domain/Comment';
-import { Twit } from "../../../services/domain/Twit";
+import { editTwit, Twit } from "../../../services/domain/Twit";
 import { Pagination } from '../../../services/domain/Pagination';
 import { Stats } from '../../../services/domain/Stats';
 
@@ -12,7 +12,7 @@ export interface TwitRepository {
      * @param id - The unique identifier of the User.
      * @returns A promise that resolves to the `User` entity if found, or `null` if not found.
      */
-    getById: (id: string) => Promise<OverViewPost | null>;
+    getById: (id: string, user_id: string) => Promise<OverViewPost | null>;
 
     /**
      * Saves a new or existing `User` entity to the storage.
@@ -24,17 +24,23 @@ export interface TwitRepository {
 
     comment_post: (comment:CommentQuery) => Promise<EagerResult>
 
-    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean) => Promise<OverViewPosts>;
+    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string) => Promise<OverViewPosts>;
 
     likeTwit: (post_id: string, user_id: string) => Promise<void>;
 
     retwit: (post_id: string, user_id: string) => Promise<void>;
 
-    getCommentsFrom: (post_id: string, pagination: Pagination) => Promise<OverViewPost[]>
+    getCommentsFrom: (post_id: string, pagination: Pagination, user_id:string) => Promise<OverViewPost[]>
 
     getStatsFromPeriod: (user_id: string, period: string) => Promise<Stats>;
 
     getFeedFor: (user_id: string, pagination: Pagination, following: Array<string>) => Promise<OverViewPosts>;
 
     getFeedByImportance: (user_id: string, pagination: Pagination, following: Array<string>) => Promise<OverViewPosts>;
+
+    patch: (twit: editTwit) => Promise<void>;
+
+    saveFavorite: (user_id: string, post_id: string) => Promise<void>;
+
+    getFavoritesFrom: (target_id: string, pagination: Pagination) => Promise<OverViewPost[]>
 }

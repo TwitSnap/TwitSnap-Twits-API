@@ -35,3 +35,15 @@ export class Twit {
     }
 
 }
+
+export interface editTwit{
+    message: string;
+
+    tags: string[];
+
+    token: string;
+
+    is_private: boolean;
+
+    post_id:string;
+}

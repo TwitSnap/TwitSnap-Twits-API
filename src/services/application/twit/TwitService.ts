@@ -1,5 +1,5 @@
 import { logger, twitController } from './../../../utils/container/container';
-import { Twit } from './../../domain/Twit';
+import { editTwit, Twit } from './../../domain/Twit';
 import { inject, injectable } from "tsyringe";
 import { TwitRepository } from "../../../db/repositories/interfaces/TwitRepository";
 import { CommentQuery } from '../../domain/Comment';
@@ -13,6 +13,7 @@ import { HttpRequester } from '../../../api/external/HttpRequester';
 import { USERS_MS_URI } from '../../../utils/config';
 import { UserIdMissingError } from '../../../api/errors/UserIdMissingError';
 import { log } from 'winston';
+import { MessageTooLongError } from '../errors/MessageTooLongError';
 
 @injectable()
 export class TwitService {
@@ -25,6 +26,9 @@ export class TwitService {
     }
 
     public post = async (twit: Twit) => {
+        if (twit.getMessage().length > 280){
+            throw new MessageTooLongError("El post tiene un mensaje muy largo");
+        }
         return await this.twitRepository.save(twit);
     }
 
@@ -32,8 +36,8 @@ export class TwitService {
         return await this.twitRepository.comment_post(comment);
     }
 
-    public getPost = async(id: string) => {
-        const post = await this.twitRepository.getById(id);
+    public getPost = async(id: string, user_id: string) => {
+        const post = await this.twitRepository.getById(id, user_id);
         if (post){
             const user = await this.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",post.created_by);
             if (user){
@@ -58,7 +62,7 @@ export class TwitService {
             is_prohibited = false;
         }
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
-        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited);
+        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
 
@@ -66,6 +70,14 @@ export class TwitService {
         
         return {posts:posts};
 
+    }
+
+    public editTwit = async (twit:editTwit) => {
+        if (twit.message.length > 280){
+            throw new MessageTooLongError("El mensaje es muy largo");
+        }
+        this.twitRepository.patch(twit);
+        return
     }
 
     public likeTwit = async (post_id: string, user_id: string) => {
@@ -76,10 +88,22 @@ export class TwitService {
         return await this.twitRepository.retwit(post_id, user_id);
     }
 
-    public getCommentsFromPost = async (post_id: string, pagination: Pagination) => {
-        let comments = await this.twitRepository.getCommentsFrom(post_id,pagination);
+    public saveFavorite = async (user_id:string, post_id: string) => {
+        await this.twitRepository.saveFavorite(user_id, post_id);
+        return 
+    }
+
+    public getCommentsFromPost = async (post_id: string, pagination: Pagination, user_id: string) => {
+        let comments = await this.twitRepository.getCommentsFrom(post_id,pagination, user_id);
         await this.getUsersFromPosts(comments);
         return comments;
+    }
+
+    public getFavorites = async (user_id:string, target_id: string, pagination: Pagination) => {
+        // TODO: AGREGAR UNA REQUEST A USUARIOS PARA VER LOS SETTINGS DE PRIVACIDAD
+        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination)
+        await this.getUsersFromPosts(posts);
+        return posts
     }
 
     public getStatsFromPeriod = async (userId: string, period: string) => {
@@ -89,8 +113,6 @@ export class TwitService {
     }
 
     public getFeedFor = async (user_id: string, pagination: Pagination) => {
-        //TODO: Agregar un Field que me permita saber los followers y sacar post de ellos primero
-        // Si el feed esta vacio busco los mas importantes del dia
         const following: Array<any> = await this.getAllFollowingOf(user_id);
         const list_following = following.map(user => {
             return user.uid;

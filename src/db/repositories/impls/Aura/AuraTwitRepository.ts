@@ -2,7 +2,7 @@ import { comment, OverViewPost, OverViewPosts, Post } from './../../../../servic
 import { BadRequestError } from './../../../../api/errors/BadRequestError';
 import { CommentQuery } from './../../../../services/domain/Comment';
 import { EagerResult, Record } from "neo4j-driver";
-import { Twit } from "../../../../services/domain/Twit";
+import { editTwit, Twit } from "../../../../services/domain/Twit";
 import { StandardDatabaseError } from "../../../errors/StandardDatabaseError";
 import { TwitRepository } from "../../interfaces/TwitRepository";
 import { AuraRepository } from "./AuraRepository";
@@ -10,6 +10,8 @@ import { AlreadyLikedError } from '../../../errors/AlreadyLikeError';
 import { AlreadyRetwitedError } from '../../../errors/AlreadyRetwitedError';
 import { Pagination } from '../../../../services/domain/Pagination';
 import { Stats } from '../../../../services/domain/Stats';
+import { InvalidTwitError } from '../../../errors/InvalidTwitError';
+import { AlreadyFavoritedError } from '../../../errors/AlreadyFavoritedError';
 
 
 
@@ -20,7 +22,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         /**
      * @inheritDoc
      */
-        getById = async (id: string): Promise<OverViewPost | null> => {
+        getById = async (id: string, user_id: string): Promise<OverViewPost | null> => {
             const ans = await this.auraRepository.executeQuery('\
             MATCH (p:Post {id:$id})\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
@@ -34,9 +36,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+            OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost\
             ORDER BY p.created_at DESC\
             RETURN postData.id AS post_id,\
                     postData.message AS message,\
@@ -48,9 +52,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     p.origin_post AS origin_post,\
                     COUNT(DISTINCT originalReply) AS ammount_comments,\
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
-                    COUNT(DISTINCT originalLike) AS ammount_likes\
-                    postData.is_private as is_private\
-            ',{id:id})
+                    COUNT(DISTINCT originalLike) AS ammount_likes,\
+                    postData.is_private as is_private,\
+                    userLikedPost as userLikedPost\
+            ',{id:id, user:user_id})
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
             if (!record){
@@ -71,6 +76,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 username_creator:null,
                 photo_creator:null,
                 is_private: record.get("is_private"),
+                liked: record.get("userLikedPost"),
             }
             return post
         };
@@ -132,7 +138,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             )
         }
     
-        getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean): Promise< OverViewPosts> =>{
+        getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string): Promise< OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
             WHERE $is_prohibited = false or NOT p.is_private\
@@ -147,9 +153,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+            OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+            WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost\
             ORDER BY p.created_at DESC\
             RETURN p.id AS post_id,\
                     postData.message AS message,\
@@ -162,14 +170,30 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     COUNT(DISTINCT originalReply) AS ammount_comments,\
                     COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                     COUNT(DISTINCT originalLike) AS ammount_likes,\
-                    postData.is_private as is_private\
+                    postData.is_private as is_private,\
+                    userLikedPost as userLikedPost\
             SKIP toInteger($offset)\
             LIMIT toInteger($limit)\
             ',
-            {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited})
+            {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited, user:user_id})
             const posts = {posts:await this.formatPosts(result)};
 
             return posts;
+        }
+
+        patch = async (twit: editTwit):Promise<void> => {
+            const post_from_user = await this.auraRepository.executeQuery('\
+                MATCH (p:Post {id:$post_id, created_by: $user_id})\
+                return p\
+            ',{post_id:twit.post_id, user_id:twit.token});
+            if (post_from_user.records.length == 0){
+                throw new InvalidTwitError("No existe el post o el usuario no creo dicho post");
+            }
+            const result  = await this.auraRepository.executeQuery('\
+                MATCH (p:Post {id:$post_id, created_by: $user_id})\
+                SET p.message= $new_message, p.tags= $new_tags\
+                return p\
+            ',{new_message:twit.message,new_tags:twit.tags, post_id:twit.post_id,user_id:twit.token});
         }
 
         likeTwit = async (post_id: string, user_id:string):  Promise<void> => {
@@ -213,7 +237,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             if (reposted_already.records.length > 0){
                 throw new AlreadyRetwitedError("User already retweeted this post");
             }
-            const original_post = await this.getById(post_id);
+            const original_post = await this.getById(post_id,user_id);
             if (original_post?.created_by === user_id){
                 throw new AlreadyRetwitedError("User Created This Tweet")
             } 
@@ -257,6 +281,79 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             })
         }
 
+        saveFavorite = async (user_id: string, post_id: string): Promise<void> =>{
+            const already_favored = await this.auraRepository.executeQuery('\
+                MATCH (p:Post {id:$post_id})\
+                WITH p\
+                MATCH (targetPost: Post)\
+                WHERE targetPost.id =\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
+                WITH targetPost\
+                MATCH (f: Favorite {post_id: targetPost.id, favored_by: $user_id})\
+                RETURN f\
+            ', {post_id: post_id, user_id: user_id});
+            if (already_favored.records.length > 0){
+                throw new AlreadyFavoritedError("The user already favorited this twit");
+            }
+            const favored = await this.auraRepository.executeQuery('\
+                MATCH (p:Post {id:$post_id})\
+                WITH p\
+                MATCH (targetPost: Post)\
+                WHERE targetPost.id =\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
+                WITH targetPost\
+                CREATE (f: Favorite {post_id:targetPost.id,\
+                                    favored_by: $user_id,\
+                                    favored_at: localdatetime()\
+                })\
+                RETURN f\
+            ', {post_id: post_id, user_id: user_id});
+            console.log(favored.summary);
+            return
+        }
+
+        getFavoritesFrom = async (target_id: string, pagination: Pagination): Promise<OverViewPost[]> => {
+            const result= await this.auraRepository.executeQuery('\
+                MATCH (f: Favorite {favored_by: $user_id})\
+                MATCH (p:Post {id:f.post_id})\
+                OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+                OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+                OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+                WITH p, like, reply, retweet,\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
+                    \
+                OPTIONAL MATCH (d:Post {id: originalId})\
+                WITH p, d, like, reply, retweet\
+                WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+                like, reply, retweet\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                    CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost\
+                ORDER BY p.created_at DESC\
+                RETURN p.id AS post_id,\
+                        postData.message AS message,\
+                        postData.created_by AS created_by,\
+                        postData.tags AS tags,\
+                        postData.created_at AS created_at,\
+                        p.is_comment AS is_comment,\
+                        p.is_retweet AS is_retweet,\
+                        p.origin_post AS origin_post,\
+                        COUNT(DISTINCT originalReply) AS ammount_comments,\
+                        COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                        COUNT(DISTINCT originalLike) AS ammount_likes,\
+                        postData.is_private as is_private,\
+                        userLikedPost as userLikedPost\
+                SKIP toInteger($offset)\
+                LIMIT toInteger($limit)\
+                ',
+                {offset:pagination.offset,limit:pagination.limit, user_id:target_id})
+                console.log(result.summary)
+                return this.formatPosts(result)
+        }
+
         getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
             const result = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {created_by: $userId})\
@@ -279,8 +376,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return stats;
         }
 
-        public getCommentsFrom = async (post_id: string, pagination:Pagination): Promise<OverViewPost[]> => {
-            return this.getComments(post_id,pagination);
+        public getCommentsFrom = async (post_id: string, pagination:Pagination,user_id:string): Promise<OverViewPost[]> => {
+            return this.getComments(post_id,pagination,user_id);
         }
 
         public getFeedFor = async (user_id: string, pagination: Pagination, following: Array<string>): Promise<OverViewPosts> =>{
@@ -299,9 +396,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply\
+                    CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost\
                 RETURN DISTINCT postData.id AS post_id,\
                         postData.message AS message,\
                         postData.created_by AS created_by,\
@@ -313,7 +412,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                         COUNT(DISTINCT originalReply) AS ammount_comments,\
                         COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
                         COUNT(DISTINCT originalLike) AS ammount_likes,\
-                        postData.is_private as is_private\
+                        postData.is_private as is_private,\
+                        userLikedPost as userLikedPost\
                 ORDER BY ammount_likes DESC\
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
@@ -382,6 +482,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             username_creator:null,
                             photo_creator:null,
                             is_private: record.get("is_private"),
+                            liked: record.get("userLikedPost")
 
                         };
                 posts.push(obj)
@@ -390,21 +491,23 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         }
 
 
-        private getComments = async (post_id:string, pagination: Pagination) => {
+        private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
-                            WITH p, reply, retweet, like,c\
+                            OPTIONAL MATCH (c)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
+                            WITH p, reply, retweet, like,c,\
+                                CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost\
                             ORDER BY c.created_at DESC\
-                            RETURN c.id as post_id,c.message as message,c.created_by as created_by,\
+                            RETURN c.is_private as is_private, c.id as post_id,c.message as message,c.created_by as created_by,\
                                     c.tags as tags, c.created_at as created_at,\
                                     c.is_comment as is_comment, c.is_retweet as is_retweet, c.origin_post as origin_post,\
-                                    COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes\
+                                    COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes,userLikedPost as userLikedPost\
                             SKIP toInteger($offset)\
                             LIMIT toInteger($limit)\
-                            ',{post_id,offset:pagination.offset,limit:pagination.limit})
+                            ',{post_id,offset:pagination.offset,limit:pagination.limit, user:user_id})
                             
             let coms = this.formatPosts(query)
             return coms

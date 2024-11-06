@@ -4,7 +4,7 @@ import { Request } from 'express';
 import { injectable } from "tsyringe";
 import { TwitService } from '../../services/application/twit/TwitService';
 import { CommentQuery } from '../../services/domain/Comment';
-import { Twit } from '../../services/domain/Twit';
+import { editTwit, Twit } from '../../services/domain/Twit';
 import { Controller } from "./Controller";
 import { HttpResponseSender } from "./HttpResponseSender";
 import axios from 'axios';
@@ -12,6 +12,7 @@ import { AUTH_MS_URI, CLIENT_SECRET } from '../../utils/config';
 import { logger } from '../../utils/container/container';
 import { Pagination } from '../../services/domain/Pagination';
 import { UserIdMissingError } from '../errors/UserIdMissingError';
+import { Table } from 'typeorm';
 
 
 @injectable()
@@ -105,10 +106,11 @@ export class TwitController extends Controller{
             if (! req.query.id){
                 throw new BadRequestError("");
             }
+            const user_id = await this.obtainIdFromToken(req)
             const id = this.getQueryFieldOrBadRequestError<string>(req,"id");
             //const id = req.query.id as string;
             logger.logInfo("Getting info of post: " + id);
-            const post = await this.twitService.getPost(id);
+            const post = await this.twitService.getPost(id,user_id);
             console.log(post);
             this.okResponse(res,post);
         }
@@ -116,6 +118,18 @@ export class TwitController extends Controller{
             next(e)
         }
 
+    }
+
+    public saveFavorite = async (req: Request, res: Response,next: NextFunction) => {
+        try{
+            const op_id = await this.obtainIdFromToken(req);
+            const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+            await this.twitService.saveFavorite(op_id, post_id);
+            return this.okNoContentResponse(res);
+        }
+        catch(e){
+            next(e)
+        }
     }
 
     public getAllPostsFromUser = async (req: Request, res: Response,next: NextFunction) => {
@@ -138,7 +152,20 @@ export class TwitController extends Controller{
 
     public editPost = async (req: Request, res: Response,next: NextFunction) =>{
         try{
-
+            const user_id = await this.obtainIdFromToken(req);
+            const c_body = this.getFieldOrBadRequestError<string>(req,"body");
+            const c_post_id = this.getFieldOrBadRequestError<string>(req,"post_id");
+            const c_tags = this.getFieldOrBadRequestError<string[]>(req,"tags");
+            const twit: editTwit = {
+                message: c_body,
+                token: user_id,
+                post_id:c_post_id,
+                is_private:false,
+                tags:c_tags,
+            };
+            await this.twitService.editTwit(twit);
+            return this.okNoContentResponse(res);
+            
         }
         catch(e){
             next(e)
@@ -147,11 +174,25 @@ export class TwitController extends Controller{
 
     public getCommentsFromPost = async (req: Request, res: Response, next: NextFunction) => {
         try{
+            const user_id = await this.obtainIdFromToken(req);
             const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
             const pagination = this.getPagination(req);
-            const comments = await this.twitService.getCommentsFromPost(post_id,pagination);
+            const comments = await this.twitService.getCommentsFromPost(post_id,pagination,user_id);
             console.log(comments);
             return this.okResponse(res,comments);
+        }
+        catch(e){
+            next(e)
+        }
+    }
+
+    public getFavorites = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = await this.obtainIdFromToken(req);
+            const target_id = this.getQueryFieldOrBadRequestError<string>(req,"user");
+            const pagination = this.getPagination(req);
+            const posts = await this.twitService.getFavorites(user_id,target_id,pagination);
+            return this.okResponse(res,posts);
         }
         catch(e){
             next(e)
