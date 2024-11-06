@@ -76,7 +76,7 @@ export class TwitService {
         if (twit.message.length > 280){
             throw new MessageTooLongError("El mensaje es muy largo");
         }
-        this.twitRepository.patch(twit);
+        await this.twitRepository.patch(twit);
         return
     }
 
