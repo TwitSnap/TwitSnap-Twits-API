@@ -516,7 +516,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
-                            OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
+                            OPTIONAL MATCH (f: Favorite {post_id: c.id, favored_by: $user})\
                             WITH p, reply, retweet, like,c,\
                                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
                                 CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
