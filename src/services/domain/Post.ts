@@ -15,7 +15,8 @@ export interface OverViewPost {
     username_creator:string | null,
     photo_creator:string | null,
     is_private: boolean,
-    liked: boolean
+    liked: boolean,
+    favourite:boolean
 }
 
 export interface Like{

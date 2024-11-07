@@ -101,7 +101,7 @@ export class TwitService {
 
     public getFavorites = async (user_id:string, target_id: string, pagination: Pagination) => {
         // TODO: AGREGAR UNA REQUEST A USUARIOS PARA VER LOS SETTINGS DE PRIVACIDAD
-        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination)
+        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id)
         await this.getUsersFromPosts(posts);
         return posts
     }

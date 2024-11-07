@@ -152,10 +152,13 @@ export class TwitController extends Controller{
 
     public editPost = async (req: Request, res: Response,next: NextFunction) =>{
         try{
+            logger.logInfo("Se recibio una peticion de editar post")
             const user_id = await this.obtainIdFromToken(req);
             const c_body = this.getFieldOrBadRequestError<string>(req,"body");
             const c_post_id = this.getFieldOrBadRequestError<string>(req,"post_id");
             const c_tags = this.getFieldOrBadRequestError<string[]>(req,"tags");
+            logger.logInfo("Requested: " + user_id)
+            logger.logInfo("Post a editar: " + c_post_id)
             const twit: editTwit = {
                 message: c_body,
                 token: user_id,
@@ -174,6 +177,7 @@ export class TwitController extends Controller{
 
     public getCommentsFromPost = async (req: Request, res: Response, next: NextFunction) => {
         try{
+            logger.logInfo("Se recibio una peticion de obtener comentarios de un post")
             const user_id = await this.obtainIdFromToken(req);
             const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
             const pagination = this.getPagination(req);
@@ -188,6 +192,7 @@ export class TwitController extends Controller{
 
     public getFavorites = async (req: Request, res: Response, next: NextFunction) => {
         try{
+            logger.logInfo("Se recibio peticion de obtener los favoritos de un usuario")
             const user_id = await this.obtainIdFromToken(req);
             const target_id = this.getQueryFieldOrBadRequestError<string>(req,"user");
             const pagination = this.getPagination(req);
