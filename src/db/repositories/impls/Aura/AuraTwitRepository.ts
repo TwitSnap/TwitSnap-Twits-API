@@ -272,7 +272,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 created_at: localdatetime(),\
                                 is_comment: $is_comment,\
                                 is_retweet: $is_retweet,\
-                                origin_post: $origin_post\
+                                origin_post: $origin_post,\
                                 is_private: $is_private\
                 })\
                 WITH c\
