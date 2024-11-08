@@ -12,6 +12,7 @@ import { Pagination } from '../../../../services/domain/Pagination';
 import { Stats } from '../../../../services/domain/Stats';
 import { InvalidTwitError } from '../../../errors/InvalidTwitError';
 import { AlreadyFavoritedError } from '../../../errors/AlreadyFavoritedError';
+import { logger } from '../../../../utils/container/container';
 
 
 
@@ -214,7 +215,18 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 MATCH (targetPost) - [:LIKED_BY]->(c: Like {liked_by:$user_id})\
                 RETURN c',{post_id:post_id,user_id:user_id});
             if (liked_already.records.length > 0){
-                throw new AlreadyLikedError("The user already like this post");
+                logger.logInfo("Attempting to remove like from: "+ post_id)
+                await this.auraRepository.executeQuery('\
+                    MATCH (p:Post {id:$post_id})\
+                    WITH p\
+                    MATCH (targetPost: Post)\
+                    WHERE targetPost.id = \
+                    CASE WHEN p.is_retweet = true Then p.origin_post Else p.id END\
+                    WITH targetPost\
+                    MATCH (targetPost) - [l :LIKED_BY]->(c: Like {liked_by:$user_id})\
+                    DELETE l,c\
+                    ',{post_id:post_id,user_id:user_id});
+                return
             }
             const like = await this.auraRepository.executeQuery('\
                 CREATE (l:Like {id:randomUUID(),\
@@ -300,7 +312,18 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 RETURN f\
             ', {post_id: post_id, user_id: user_id});
             if (already_favored.records.length > 0){
-                throw new AlreadyFavoritedError("The user already favorited this twit");
+                logger.logInfo("Attempting to remove favorite post: " + post_id)
+                await this.auraRepository.executeQuery('\
+                    MATCH (p:Post {id:$post_id})\
+                    WITH p\
+                    MATCH (targetPost: Post)\
+                    WHERE targetPost.id =\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
+                    WITH targetPost\
+                    MATCH (f: Favorite {post_id: targetPost.id, favored_by: $user_id})\
+                    DELETE f\
+                ', {post_id: post_id, user_id: user_id});
+                return
             }
             const favored = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {id:$post_id})\
