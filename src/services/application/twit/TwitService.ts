@@ -47,6 +47,7 @@ export class TwitService {
             if (post.deleted){
                 post.photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
                 post.username_creator = "DELETED";
+                post.message = "Post Deleted"
             }
 
         }
