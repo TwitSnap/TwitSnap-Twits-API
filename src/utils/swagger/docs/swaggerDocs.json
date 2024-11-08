@@ -96,6 +96,19 @@
                 }
               }
             }
+          },
+          "delete": {
+            "summary":"Borrar un post",
+            "description":"Borrar un post por id",
+            "parameters": [
+              {
+                "name": "post_id",
+                "in": "query",
+                "description": "The id of the post",
+                "required": false,
+                "type": "string"
+              }
+            ]
           }
 
       },

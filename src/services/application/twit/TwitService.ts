@@ -44,6 +44,10 @@ export class TwitService {
                 post.photo_creator = user.data.photo;
                 post.username_creator = user.data.username;
             }
+            if (post.deleted){
+                post.photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
+                post.username_creator = "DELETED";
+            }
 
         }
        
@@ -62,7 +66,7 @@ export class TwitService {
             is_prohibited = false;
         }
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
-        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id);
+        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,followers_of_op);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
 
@@ -101,7 +105,8 @@ export class TwitService {
 
     public getFavorites = async (user_id:string, target_id: string, pagination: Pagination) => {
         // TODO: AGREGAR UNA REQUEST A USUARIOS PARA VER LOS SETTINGS DE PRIVACIDAD
-        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id)
+        const following: Array<any> = await this.getAllFollowingOf(user_id);
+        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id, following)
         await this.getUsersFromPosts(posts);
         return posts
     }
@@ -120,19 +125,14 @@ export class TwitService {
         logger.logDebug("Los usuarios que sigue " + user_id + "son" + list_following)
         const feed = await this.twitRepository.getFeedFor(user_id, pagination,list_following);
         let posts = feed?.posts
-        logger.logInfo("La cantidad de twits de seguidores es: "+ posts.length);
-        if (posts.length < pagination.limit){
-            logger.logInfo("Se busca los twits de mayor importancia");
-            pagination.offset = 0;
-            const importance = await this.twitRepository.getFeedByImportance(user_id,pagination,list_following);
-            importance.posts.forEach(post => {
-                posts.push(post);
-            })
-        }
-        logger.logInfo("Luego de buscar los twits de mayo importancia obtengo: " + posts.length)
-        posts.length = Math.min(pagination.limit,posts.length);
+        console.log(posts)
+        logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
         await this.getUsersFromPosts(posts);
         return {posts:posts};
+    }
+
+    public deleteTwit = async (user_id: string, post_id: string) => {
+        await this.twitRepository.delete(post_id,user_id)
     }
        /**
      * Handles errors related to the external HTTP request.
@@ -168,6 +168,11 @@ export class TwitService {
                     posts[idx].photo_creator = request.data.photo;
                     posts[idx].username_creator = request.data.username
                     users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
+                }
+                if (posts[idx].deleted){
+                    posts[idx].photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
+                    posts[idx].username_creator = "DELETED";
+                    posts[idx].message = "Post Deleted"
                 }
             }
             catch(e){

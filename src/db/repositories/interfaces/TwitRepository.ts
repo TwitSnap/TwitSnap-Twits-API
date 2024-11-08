@@ -24,7 +24,7 @@ export interface TwitRepository {
 
     comment_post: (comment:CommentQuery) => Promise<EagerResult>
 
-    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string) => Promise<OverViewPosts>;
+    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string, follwing: Array<string>) => Promise<OverViewPosts>;
 
     likeTwit: (post_id: string, user_id: string) => Promise<void>;
 
@@ -36,11 +36,11 @@ export interface TwitRepository {
 
     getFeedFor: (user_id: string, pagination: Pagination, following: Array<string>) => Promise<OverViewPosts>;
 
-    getFeedByImportance: (user_id: string, pagination: Pagination, following: Array<string>) => Promise<OverViewPosts>;
+    delete: (post_id: string, user_id: string) => Promise<void>;
 
     patch: (twit: editTwit) => Promise<void>;
 
     saveFavorite: (user_id: string, post_id: string) => Promise<void>;
 
-    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string) => Promise<OverViewPost[]>
+    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>) => Promise<OverViewPost[]>
 }

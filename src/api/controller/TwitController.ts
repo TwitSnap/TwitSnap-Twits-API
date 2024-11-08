@@ -206,8 +206,10 @@ export class TwitController extends Controller{
 
     public deletePost = async (req:Request, res:Response, next: NextFunction) => {
         try{
-            const userId = this.getQueryFieldOrBadRequestError<string>(req,"user_id");
+            const user_id = await this.obtainIdFromToken(req);
             const post_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
+            await this.twitService.deleteTwit(user_id, post_id);
+            return this.okNoContentResponse(res)
         }
         catch(e){
             next(e);
