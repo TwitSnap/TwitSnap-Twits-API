@@ -113,8 +113,7 @@ export class TwitService {
     }
 
     public getStatsFromPeriod = async (userId: string, period: string) => {
-        const per = "P"+period
-        const stats = await this.twitRepository.getStatsFromPeriod(userId, per);
+        const stats = await this.twitRepository.getStatsFromPeriod(userId, period);
         return stats;
     }
 

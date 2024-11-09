@@ -27,6 +27,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getById = async (id: string, user_id: string): Promise<OverViewPost | null> => {
             const ans = await this.auraRepository.executeQuery('\
             MATCH (p:Post {id:$id})\
+            WHERE NOT p.deleted\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -34,6 +35,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
+            WHERE NOT p.deleted\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -65,7 +67,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
             if (!record){
-                throw new BadRequestError("");
+                throw new TwitNotFoundError("");
             }
             const post: OverViewPost = {
                 message:record.get("message"),
@@ -153,7 +155,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string, following: Array<string>): Promise< OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
-            WHERE NOT p.is_private or p.created_by = $user or p.created_by in $idList\
+            WHERE NOT p.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -161,6 +163,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
+            WHERE NOT d.deleted\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -215,8 +218,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
                 MATCH (targetPost: Post {id:ID})\
                 SET targetPost.deleted = true\
+                WITH targetPost\
+                MATCH (targetPost) -[:COMMENTED_BY]-> (d: Post)\
+                SET d.origin_post = $delete\
                 RETURN targetPost\
-                ', {user_id: user_id, post_id:post_id})
+                ', {user_id: user_id, post_id:post_id, delete:"deleted"})
         }
 
         patch = async (twit: editTwit):Promise<void> => {
@@ -377,7 +383,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const result= await this.auraRepository.executeQuery('\
                 MATCH (f: Favorite {favored_by: $target_id})\
                 MATCH (p:Post {id:f.post_id})\
-                WHERE (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
+                WHERE NOT p.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -385,6 +391,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
+                WHERE NOT d.deleted\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -422,12 +429,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
             const result = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {created_by: $userId})\
+                WHERE NOT p.deleted\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
-                    WHERE like.liked_at > localdatetime() - duration($period)\
+                    WHERE date(like.liked_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
-                    WHERE reply.created_at > localdatetime() - duration($period)\
+                    WHERE date(reply.created_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
-                    WHERE retweet.created_at > localdatetime() - duration($period)\
+                    WHERE date(retweet.created_at) >= date($period)\
                 RETURN COUNT(DISTINCT like) as ammount_likes,\
                         COUNT(DISTINCT retweet) as ammount_retweets,\
                         COUNT(DISTINCT reply) as ammount_comments\
@@ -448,7 +456,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         public getFeedFor = async (user_id: string, pagination: Pagination, following: Array<string>): Promise<OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
                 MATCH (p:Post {is_comment:false})\
-                WHERE p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
+                WHERE NOT p.deleted AND p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
                         AND (NOT p.is_private or p.created_by IN $idList) \
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -457,6 +465,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
+                WHERE NOT d.deleted\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -526,6 +535,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
+                            WHERE NOT p.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\

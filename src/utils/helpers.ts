@@ -13,6 +13,7 @@ import { UserIdMissingError } from "../api/errors/UserIdMissingError";
 import { MessageTooLongError } from "../services/application/errors/MessageTooLongError";
 import { InvalidTwitError } from "../db/errors/InvalidTwitError";
 import { AlreadyFavoritedError } from "../db/errors/AlreadyFavoritedError";
+import { TwitNotFoundError } from "../db/errors/TwitNotFoundError";
 
 /**
  * A utility class for various helper functions.
@@ -78,6 +79,7 @@ export class Helpers {
         Helpers._errorStatusCodeMap.set(BadRequestError, StatusCodes.BAD_REQUEST);
         Helpers._errorStatusCodeMap.set(MessageTooLongError, StatusCodes.BAD_REQUEST);
         Helpers._errorStatusCodeMap.set(InvalidTwitError, StatusCodes.CONFLICT);
+        Helpers._errorStatusCodeMap.set(TwitNotFoundError, StatusCodes.NOT_FOUND);
         Helpers._errorStatusCodeMap.set(AlreadyFavoritedError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(UserIdMissingError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(AlreadyLikedError, StatusCodes.CONFLICT);
