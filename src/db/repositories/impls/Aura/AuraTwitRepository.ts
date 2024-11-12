@@ -535,7 +535,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
-                            WHERE NOT p.deleted\
+                            WHERE NOT c.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
