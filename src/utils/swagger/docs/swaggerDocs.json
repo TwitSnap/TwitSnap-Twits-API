@@ -371,7 +371,7 @@
             {
               "name": "user_id",
               "in": "query",
-              "description": "Not required. User id of a specific user",
+              "description": "Not required. Get posts from specific user id",
               "required": false,
               "type": "string"
             },

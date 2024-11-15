@@ -24,7 +24,6 @@ router.get("/v1/twit/feed",twitController.getFeed);
 
 router.get("/v1/twit/admin/post", twitAdminController.getPost);
 router.get("/v1/twit/admin/posts", twitAdminController.getPosts);
-
 router.post("/v1/twit/admin/block", twitAdminController.blockTwit);
 
 
