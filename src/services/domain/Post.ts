@@ -17,6 +17,7 @@ export interface OverViewPost {
     is_private: boolean,
     liked: boolean,
     favourite:boolean,
+    retweeted:boolean,
     deleted: boolean
 }
 

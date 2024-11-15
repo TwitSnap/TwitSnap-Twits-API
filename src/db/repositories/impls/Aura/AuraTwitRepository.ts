@@ -42,11 +42,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+            OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
-                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
+                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
             ORDER BY p.created_at DESC\
             RETURN postData.id AS post_id,\
                     postData.message AS message,\
@@ -62,7 +64,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     postData.is_private as is_private,\
                     userLikedPost as userLikedPost,\
                     userFavedPost as FavedPost,\
-                    postData.deleted as deleted\
+                    postData.deleted as deleted,\
+                    userRetweeted as userRetweeted\
             ',{id:id, user:user_id})
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
@@ -87,6 +90,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 liked: record.get("userLikedPost"),
                 favourite: record.get("FavedPost"),
                 deleted: record.get("deleted"),
+                retweeted: record.get("userRetweeted")
             }
             return post
         };
@@ -105,7 +109,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 is_retweet: $is_retweet,\
                                 origin_post: $origin_post,\
                                 is_private: $is_private,\
-                                deleted: $deleted\
+                                deleted: $deleted,\
+                                is_blocked: $is_blocked\
                 })',
                 {token:twit.getToken(),
                     message:twit.getMessage(),
@@ -115,6 +120,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     origin_post:null,
                     is_private: twit.getIsPrivate(),
                     deleted:false,
+                    is_blocked: false
                 }
 
             )
@@ -173,11 +179,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+            OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
-                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
-            ORDER BY p.created_at DESC\
+                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
+                ORDER BY p.created_at DESC\
             RETURN p.id AS post_id,\
                     postData.message AS message,\
                     postData.created_by AS created_by,\
@@ -192,7 +200,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     postData.is_private as is_private,\
                     userLikedPost as userLikedPost,\
                     userFavedPost as FavedPost,\
-                    postData.deleted as deleted\
+                    postData.deleted as deleted,\
+                    userRetweeted as userRetweeted\
             SKIP toInteger($offset)\
             LIMIT toInteger($limit)\
             ',
@@ -287,7 +296,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WITH p\
                 MATCH (targetPost: Post)\
                 WHERE targetPost.id =\
-                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
                 WITH targetPost\
                 MATCH (targetPost)-[:RETWEETED_BY]-> (c:Post {created_by:$user_id})\
                 RETURN c',{post_id:post_id,user_id:user_id});
@@ -401,10 +410,12 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                     CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
-                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
+                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                    CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
                 ORDER BY p.created_at DESC\
                 RETURN p.id AS post_id,\
                         postData.message AS message,\
@@ -420,7 +431,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                         postData.is_private as is_private,\
                         userLikedPost as userLikedPost,\
                         userFavedPost as FavedPost,\
-                        postData.deleted as deleted\
+                        postData.deleted as deleted,\
+                        userRetweeted as userRetweeted\
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
                 ',
@@ -476,9 +488,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                     CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
-                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
+                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                    CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
                 RETURN DISTINCT postData.id AS post_id,\
                         postData.message AS message,\
                         postData.created_by AS created_by,\
@@ -493,7 +507,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                         postData.is_private as is_private,\
                         userLikedPost as userLikedPost,\
                         userFavedPost as FavedPost,\
-                        postData.deleted as deleted\
+                        postData.deleted as deleted,\
+                        userRetweeted as userRetweeted\
                 ORDER BY created_at DESC\
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
@@ -525,7 +540,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             is_private: record.get("is_private"),
                             liked: record.get("userLikedPost"),
                             favourite: record.get("FavedPost"),
-                            deleted: record.get("deleted")
+                            deleted: record.get("deleted"),
+                            retweeted: record.get("userRetweeted")
 
                         };
                 posts.push(obj)
@@ -543,15 +559,17 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
                             OPTIONAL MATCH (f: Favorite {post_id: c.id, favored_by: $user})\
+                            OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
                             WITH p, reply, retweet, like,c,\
                                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
-                                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost\
+                                CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                                CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
                             ORDER BY c.created_at DESC\
                             RETURN c.is_private as is_private, c.id as post_id,c.message as message,c.created_by as created_by,\
                                     c.tags as tags, c.created_at as created_at,\
                                     c.is_comment as is_comment, c.is_retweet as is_retweet, c.origin_post as origin_post,\
                                     COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes,userLikedPost as userLikedPost,\
-                                    userFavedPost as FavedPost, c.deleted as deleted\
+                                    userFavedPost as FavedPost, c.deleted as deleted, userRetweeted as userRetweeted\
                             SKIP toInteger($offset)\
                             LIMIT toInteger($limit)\
                             ',{post_id,offset:pagination.offset,limit:pagination.limit, user:user_id})
