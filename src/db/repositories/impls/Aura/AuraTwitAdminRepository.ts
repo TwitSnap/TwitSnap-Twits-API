@@ -47,6 +47,9 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
                 null as FavedPost,\
                 postData.deleted as deleted\
         ',{id:post_id})
+        if (ans.records.length == 0){
+            throw new TwitNotFoundError("No se encontro el twit pedido");
+        }
         return this.formatPosts(ans);
     }
 
