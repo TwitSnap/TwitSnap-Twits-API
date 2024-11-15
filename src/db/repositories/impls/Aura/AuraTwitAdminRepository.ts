@@ -1,3 +1,4 @@
+import { OverViewPostAdmin } from './../../../../services/domain/PostAdmin';
 import { TwitNotFoundError } from './../../../errors/TwitNotFoundError';
 import { Pagination } from './../../../../services/domain/Pagination';
 import { OverViewPost, OverViewPosts } from './../../../../services/domain/Post';
@@ -11,7 +12,7 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
         super()
     }
 
-    public getPost = async (post_id: string): Promise<OverViewPost[]> => {
+    public getPost = async (post_id: string): Promise<OverViewPostAdmin[]> => {
         const ans = await this.auraRepository.executeQuery('\
         MATCH (p:Post {id:$id})\
         WHERE NOT p.deleted\
@@ -45,7 +46,8 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
                 postData.is_private as is_private,\
                 null as userLikedPost,\
                 null as FavedPost,\
-                postData.deleted as deleted\
+                postData.deleted as deleted,\
+                postData.is_blocked as is_blocked\
         ',{id:post_id})
         if (ans.records.length == 0){
             throw new TwitNotFoundError("No se encontro el twit pedido");
@@ -53,7 +55,7 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
         return this.formatPosts(ans);
     }
 
-    public getAllPosts = async (pagination: Pagination, filter_by_id: boolean, user: string) : Promise<OverViewPost[]> => {
+    public getAllPosts = async (pagination: Pagination, filter_by_id: boolean, user: string) : Promise<OverViewPostAdmin[]> => {
         const result= await this.auraRepository.executeQuery('\
         MATCH (p:Post)\
         WHERE NOT p.deleted AND (($filterById AND p.created_by = $optional_user) OR NOT $filterById)\
@@ -144,7 +146,7 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
         let posts = []
         for (let record of records){
             const arr: string[] = record.get("tags")
-            const obj: OverViewPost = {message:record.get("message"),
+            const obj: OverViewPostAdmin = {message:record.get("message"),
                         tags:arr,
                         created_by:record.get("created_by"),
                         post_id:record.get("post_id"),
@@ -160,7 +162,8 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
                         is_private: record.get("is_private"),
                         liked: record.get("userLikedPost"),
                         favourite: record.get("FavedPost"),
-                        deleted: record.get("deleted")
+                        deleted: record.get("deleted"),
+                        is_blocked: record.get("is_blocked")
 
                     };
             posts.push(obj)
