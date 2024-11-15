@@ -27,7 +27,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getById = async (id: string, user_id: string): Promise<OverViewPost | null> => {
             const ans = await this.auraRepository.executeQuery('\
             MATCH (p:Post {id:$id})\
-            WHERE NOT p.deleted\
+            WHERE NOT p.deleted AND NOT p.is_blocked\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -35,7 +35,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
-            WHERE NOT p.deleted\
+            WHERE NOT d.deleted AND NOT d.is_blocked\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -134,7 +134,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 is_retweet: $is_retweet,\
                                 origin_post: $origin_post,\
                                 is_private: targetPost.is_private,\
-                                deleted: $deleted\
+                                deleted: $deleted,\
+                                is_blocked: $is_blocked\
                 })\
                 WITH c, targetPost\
                 CREATE (targetPost)-[:COMMENTED_BY]->(c)\
@@ -148,6 +149,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 post_id:comment.getPostId(),
                 is_private:false,
                 deleted:false,
+                is_blocked: false
                 }
             )
         }
@@ -155,7 +157,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string, following: Array<string>): Promise< OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
-            WHERE NOT p.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
+            WHERE NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -163,7 +165,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
-            WHERE NOT d.deleted\
+            WHERE NOT d.is_blocked AND NOT d.deleted\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -383,7 +385,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const result= await this.auraRepository.executeQuery('\
                 MATCH (f: Favorite {favored_by: $target_id})\
                 MATCH (p:Post {id:f.post_id})\
-                WHERE NOT p.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
+                WHERE NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -391,7 +393,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.deleted\
+                WHERE NOT d.is_blocked AND NOT d.deleted\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -456,7 +458,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         public getFeedFor = async (user_id: string, pagination: Pagination, following: Array<string>): Promise<OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
                 MATCH (p:Post {is_comment:false})\
-                WHERE NOT p.deleted AND p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
+                WHERE NOT p.is_blocked AND NOT p.deleted AND p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
                         AND (NOT p.is_private or p.created_by IN $idList) \
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -465,7 +467,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.deleted\
+                WHERE NOT d.is_blocked AND NOT d.deleted\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -535,7 +537,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
-                            WHERE NOT c.deleted\
+                            WHERE NOT c.is_blocked AND NOT c.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\

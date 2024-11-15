@@ -1,3 +1,5 @@
+import { TwitAdminRepository } from './../../db/repositories/interfaces/TwitAdminRepository';
+import { TwitAdminController } from './../../api/controller/TwitAdminController';
 import { AuraTwitRepository } from './../../db/repositories/impls/Aura/AuraTwitRepository';
 
 import { container } from "tsyringe";
@@ -13,6 +15,7 @@ import {LOGGING, LOG_DEBUG, LOG_ERROR, LOG_INFO} from "../config";
 import { TwitRepository } from "../../db/repositories/interfaces/TwitRepository";
 import { TwitController } from "../../api/controller/TwitController";
 import { HttpRequester } from '../../api/external/HttpRequester';
+import { AuraTwitAdminRepository } from '../../db/repositories/impls/Aura/AuraTwitAdminRepository';
 
 // ? Register all dependencies
 
@@ -24,11 +27,13 @@ container.register<boolean>("logInfo", {useValue: (LOG_INFO === "true") });
 
 container.register<DatabaseConnectorStrategy<DataSource, DataSource>>("DatabaseConnectorStrategy", TypeORMDatabaseConnectorStrategy);
 container.register<TwitRepository>("TwitRepository", AuraTwitRepository);
+container.register<TwitAdminRepository>("TwitAdminRepository", AuraTwitAdminRepository);
 container.register<HttpRequester>("HttpRequester",HttpRequester);
 // ? Get instances
 export const logger = container.resolve(Logger);
 export const databaseConnector = container.resolve(DatabaseConnector<DataSource, DataSource>);
 export const twitController = container.resolve(TwitController);
+export const twitAdminController = container.resolve(TwitAdminController);
 export const userService = null;
 export const sessionService = null;
 export const federateAuthController = null;

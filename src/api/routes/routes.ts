@@ -1,9 +1,10 @@
-
+import { twitAdminController } from './../../utils/container/container';
 import { Router } from "express";
 import { twitController } from "../../utils/container/container";
 
 const router = Router();
 
+// Normal User Routes
 router.post("/v1/twit",twitController.postTwit);
 router.post("/v1/twit/like",twitController.like);
 router.post("/v1/twit/retwit", twitController.retwit);
@@ -17,6 +18,16 @@ router.get("/v1/twit/post/comments",twitController.getCommentsFromPost);
 router.get("/v1/twit/posts/user",twitController.getAllPostsFromUser);
 router.get("/v1/twit/user/stats",twitController.getStats);
 router.get("/v1/twit/feed",twitController.getFeed);
+
+
+// Admin User Routes
+
+router.get("/v1/twit/admin/post", twitAdminController.getPost);
+router.get("/v1/twit/admin/posts", twitAdminController.getPosts);
+
+router.post("/v1/twit/admin/block", twitAdminController.blockTwit);
+
+
 
 
 export default router;

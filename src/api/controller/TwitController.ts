@@ -7,12 +7,9 @@ import { CommentQuery } from '../../services/domain/Comment';
 import { editTwit, Twit } from '../../services/domain/Twit';
 import { Controller } from "./Controller";
 import { HttpResponseSender } from "./HttpResponseSender";
-import axios from 'axios';
-import { AUTH_MS_URI, CLIENT_SECRET } from '../../utils/config';
 import { logger } from '../../utils/container/container';
 import { Pagination } from '../../services/domain/Pagination';
 import { UserIdMissingError } from '../errors/UserIdMissingError';
-import { Table } from 'typeorm';
 
 
 @injectable()
@@ -23,7 +20,7 @@ export class TwitController extends Controller{
         this.twitService = twitService;
     }
 
-    public postTwit = async (req: Request, res: Response,next: NextFunction) => {
+    public postTwit = async (req: Request, res: Response, next: NextFunction) => {
 
 
         try{

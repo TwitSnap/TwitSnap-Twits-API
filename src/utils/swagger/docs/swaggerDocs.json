@@ -334,6 +334,13 @@
           "description": "Use this endpoint to authenticate user.",
           "parameters": [
             {
+              "name": "user_id",
+              "in": "query",
+              "description": "Optional name for filtering",
+              "required": false,
+              "type": "string"
+            },
+            {
               "name": "offset",
               "in": "query",
               "description": "The offset Desired",
@@ -352,7 +359,85 @@
             "200":{
               "description": "User Posts encontrados"
             }
-          }}
+          }
+        }
+      },
+      "/v1/twit/admin/posts":{
+        "get": {
+          "summary": "Obtener Todos los posts en el sistema",
+          "description": "Use this endpoint to obtain all posts from the system.",
+          "tags": ["Admin"],
+          "parameters": [
+            {
+              "name": "user_id",
+              "in": "query",
+              "description": "Not required. User id of a specific user",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "User Posts encontrados"
+            }
+          }
+        }
+      },
+      "/v1/twit/admin/block":{
+        "post": {
+          "summary": "Bloquear un post. Si Estaba bloqueado se desbloquea",
+          "description": "Bloquear un post. Si Estaba bloqueado se desbloquea",
+          "tags": ["Admin"],
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "query",
+              "description": "The post to be blocked",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "User Posts encontrados"
+            }
+          }
+        }
+      },
+      "/v1/twit/admin/post":{
+        "get": {
+          "summary": "Obtener un post particular",
+          "description": "Obtener un post Particular",
+          "tags": ["Admin"],
+          "parameters": [
+            {
+              "name": "post_id",
+              "in": "query",
+              "description": "The post",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "User Posts encontrados"
+            }
+          }
+        }
       }
     }
 }
