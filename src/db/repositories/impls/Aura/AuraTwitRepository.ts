@@ -490,7 +490,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                    NOT originalReply.deleted AND NOT originalReply.is_blocked\
+                    WHERE NOT originalReply.deleted AND NOT originalReply.is_blocked\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
