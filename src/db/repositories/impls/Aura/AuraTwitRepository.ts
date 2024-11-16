@@ -171,7 +171,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
-            WHERE NOT d.is_blocked AND NOT d.deleted\
+            WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -402,7 +402,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted\
+                WHERE NOT d.is_blocked AND NOT d.deleted (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -443,7 +443,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
             const result = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {created_by: $userId})\
-                WHERE NOT p.deleted\
+                WHERE NOT p.deleted AND NOT p.is_blocked\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                     WHERE date(like.liked_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -479,7 +479,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted\
+                WHERE NOT d.is_blocked AND NOT d.deleted AND p.created_by <> $user_id AND (NOT p.is_private or p.created_by IN $idList)\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
