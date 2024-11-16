@@ -44,7 +44,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                WHERE NOT originalReply.deleted AND NOT originalReply.is_blocked\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
@@ -172,7 +171,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
-            WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT d.is_private or d.created_by in $idList)\
+            WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
@@ -180,7 +179,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                WHERE NOT originalReply.deleted AND NOT originalReply.is_blocked\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -404,7 +402,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT d.is_private or d.created_by IN $idList or d.created_by = $user_id)\
+                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
                 WITH p,f, d, like, reply, retweet\
                 WITH p,f,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -412,7 +410,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                    WHERE NOT originalReply.deleted AND NOT originalReply.is_blocked\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 WITH p,f,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -450,7 +447,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                     WHERE date(like.liked_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
-                    WHERE date(reply.created_at) >= date($period) AND NOT reply.deleted AND NOT reply.is_blocked\
+                    WHERE date(reply.created_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
                     WHERE date(retweet.created_at) >= date($period)\
                 RETURN COUNT(DISTINCT like) as ammount_likes,\
@@ -482,7 +479,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted AND d.created_by <> $user_id AND (NOT d.is_private or d.created_by IN $idList)\
+                WHERE NOT d.is_blocked AND NOT d.deleted AND p.created_by <> $user_id AND (NOT p.is_private or p.created_by IN $idList)\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
@@ -490,7 +487,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                    WHERE NOT originalReply.deleted AND NOT originalReply.is_blocked\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
