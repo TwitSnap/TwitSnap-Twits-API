@@ -398,13 +398,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
-                WITH p, like, reply, retweet,\
+                WITH f,p, like, reply, retweet,\
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
-                WITH p, d, like, reply, retweet\
-                WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
+                WITH p,f, d, like, reply, retweet\
+                WITH p,f,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
@@ -412,11 +412,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
-                WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                WITH p,f,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                     CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
                     CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
                     CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
-                ORDER BY p.created_at DESC\
+                ORDER BY f.favored_at DESC\
                 RETURN p.id AS post_id,\
                         postData.message AS message,\
                         postData.created_by AS created_by,\
