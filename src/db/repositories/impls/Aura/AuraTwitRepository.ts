@@ -583,7 +583,9 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
             const query = await this.auraRepository.executeQuery('\
-                            MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
+                            MATCH (p:Post {id:$post_id})\
+                            WITH p, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
+                            MATCH (d:Post {id:originalId}) -[:COMMENTED_BY]->(c:Post)\
                             WHERE NOT c.is_blocked AND NOT c.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
                                 WHERE NOT reply.is_blocked AND NOT reply.deleted\
@@ -601,7 +603,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                     c.tags as tags, c.created_at as created_at,\
                                     c.is_comment as is_comment, c.is_retweet as is_retweet, c.origin_post as origin_post,\
                                     COUNT(DISTINCT reply) as ammount_comments, COUNT(DISTINCT retweet) as ammount_retwits, COUNT(DISTINCT like) as ammount_likes,userLikedPost as userLikedPost,\
-                                    userFavedPost as FavedPost, c.deleted as deleted, userRetweeted as userRetweeted\
+                                    userFavedPost as FavedPost, c.deleted as deleted, userRetweeted as userRetweeted, c.is_blocked as is_blocked\
                             SKIP toInteger($offset)\
                             LIMIT toInteger($limit)\
                             ',{post_id,offset:pagination.offset,limit:pagination.limit, user:user_id})
