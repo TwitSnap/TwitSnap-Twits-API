@@ -163,13 +163,13 @@ export class TwitService {
     private getUsersFromPosts = async (posts:OverViewPost[]) => {
         let users = new Map<string, {username:string,photo:string}>();
         const url = USERS_MS_URI + "/api/v1/users/"
+        /*
         for await (let [idx, post] of posts.entries()){
             try{
                 const request = await this.getRequestForUser(url,post.created_by)
                 if (request){
                     posts[idx].photo_creator = request.data.photo;
                     posts[idx].username_creator = request.data.username
-                    users.set(post.created_by,{username:request.data.username,photo:request.data.photo})
                 }
                 if (posts[idx].deleted){
                     posts[idx].photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
@@ -185,21 +185,34 @@ export class TwitService {
                      throw e; // let others bubble up
                    }
             }
-
-           
         }
-           /*
-        await Promise.all(posts.map(async (file) => {
-            const contents = await this.getRequestForUser(url,file.created_by)
-            if (contents){
-                file.photo_creator = contents.data.photo;
-                file.username_creator = contents.data.username
+        */
+        const usuarios = await Promise.all(posts.map(async (file) => {
+            try{
+                const request = await this.getRequestForUser(url,file.created_by)
+                if (request){
+                    file.photo_creator = request.data.photo;
+                    file.username_creator = request.data.username
+                }
+                if (file.deleted){
+                    file.photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
+                    file.username_creator = "DELETED";
+                    file.message = "Post Deleted"
+                }
+            }
+            catch(e){
+                if (e instanceof InvalidCredentialsError) {
+                    file.username_creator = "DELETED";
+                    file.photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
+                    return file;
+                   } else {
+                     throw e; // let others bubble up
+                   }
             }
 
-            console.log(contents)
+            return file;
           }));
-          */
-        return users;
+        return usuarios;
     }
 
     private getRequestForUser = async (url:string,id: string) => {
