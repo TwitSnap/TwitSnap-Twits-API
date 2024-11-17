@@ -210,7 +210,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             LIMIT toInteger($limit)\
             ',
             {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited, user:user_id, idList: following})
-            console.log(result.records);
             const posts = {posts:await this.formatPosts(result)};
 
             return posts;

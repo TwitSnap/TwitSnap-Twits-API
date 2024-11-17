@@ -56,10 +56,12 @@ export class TwitService {
     }
 
     public getAllPostsFrom = async(id: string,pagination:Pagination, op_id:string) => {
+        let lista_de_amigos_seguidos: string[] = []
         let followers_of_op: Array<any> = await this.getAllFollowingOf(op_id);
+        let lista_following = this.getFollowingList(followers_of_op);
         let is_prohibited = true;
-        followers_of_op.forEach(element => {
-            if (element.uid === id){
+        lista_following.forEach(element => {
+            if (element === id){
                 is_prohibited = false;
             }
         });
@@ -67,7 +69,8 @@ export class TwitService {
             is_prohibited = false;
         }
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
-        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,followers_of_op);
+        console.log(lista_following);
+        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,lista_following);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
 
@@ -107,7 +110,8 @@ export class TwitService {
     public getFavorites = async (user_id:string, target_id: string, pagination: Pagination) => {
         // TODO: AGREGAR UNA REQUEST A USUARIOS PARA VER LOS SETTINGS DE PRIVACIDAD
         const following: Array<any> = await this.getAllFollowingOf(user_id);
-        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id, following)
+        const lista_followers = this.getFollowingList(following);
+        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id, lista_followers)
         await this.getUsersFromPosts(posts);
         return posts
     }
@@ -119,11 +123,9 @@ export class TwitService {
 
     public getFeedFor = async (user_id: string, pagination: Pagination) => {
         const following: Array<any> = await this.getAllFollowingOf(user_id);
-        const list_following = following.map(user => {
-            return user.uid;
-        })
-        logger.logDebug("Los usuarios que sigue " + user_id + "son" + list_following)
-        const feed = await this.twitRepository.getFeedFor(user_id, pagination,list_following);
+        const lista_followers = this.getFollowingList(following);
+        console.log(lista_followers);
+        const feed = await this.twitRepository.getFeedFor(user_id, pagination,lista_followers);
         let posts = feed?.posts
         console.log(posts)
         logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
@@ -242,5 +244,13 @@ export class TwitService {
             return request.data.following;
         }
         return [];
+    }
+
+    private getFollowingList = (lista: any[]): string[] => {
+        let lista_amigos: string[] = [];
+        lista.forEach(element => {
+            lista_amigos.push(element.uid);
+        })
+        return lista_amigos;
     }
 }
