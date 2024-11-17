@@ -44,12 +44,12 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                 CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
                 CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
                 CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
-            ORDER BY p.created_at DESC\
             RETURN postData.id AS post_id,\
                     postData.message AS message,\
                     postData.created_by AS created_by,\
@@ -65,7 +65,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     userLikedPost as userLikedPost,\
                     userFavedPost as FavedPost,\
                     postData.deleted as deleted,\
-                    userRetweeted as userRetweeted\
+                    userRetweeted as userRetweeted,\
+                    postData.is_blocked as is_blocked\
             ',{id:id, user:user_id})
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
@@ -90,7 +91,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 liked: record.get("userLikedPost"),
                 favourite: record.get("FavedPost"),
                 deleted: record.get("deleted"),
-                retweeted: record.get("userRetweeted")
+                retweeted: record.get("userRetweeted"),
+                is_blocked: record.get("is_blocked")
             }
             return post
         };
@@ -168,17 +170,18 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
             WITH p, like, reply, retweet,\
-                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                 \
             OPTIONAL MATCH (d:Post {id: originalId})\
-            WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
+            WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user or postData.created_by in $idList)\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -201,11 +204,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     userLikedPost as userLikedPost,\
                     userFavedPost as FavedPost,\
                     postData.deleted as deleted,\
-                    userRetweeted as userRetweeted\
+                    userRetweeted as userRetweeted,\
+                    postData.is_blocked as is_blocked\
             SKIP toInteger($offset)\
             LIMIT toInteger($limit)\
             ',
             {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited, user:user_id, idList: following})
+            console.log(result.records);
             const posts = {posts:await this.formatPosts(result)};
 
             return posts;
@@ -214,9 +219,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         delete = async (post_id: string, user_id: string) : Promise<void> => {
             const post = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {id:$post_id})\
-                WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
-                MATCH (targetPost: Post {id:ID})\
-                RETURN targetPost.created_by as created_by\
+                RETURN p.created_by as created_by, p.is_retweet as is_retweet\
                 ', {user_id: user_id, post_id:post_id})
             if (post.records.length === 0){
                 throw new TwitNotFoundError("No se encontro el twit pedido")
@@ -224,16 +227,35 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             if (post.records.at(0)?.get("created_by") != user_id){
                 throw new InvalidTwitError("El usuario no es el creador del twit");
             }
+            if (post.records.at(0)?.get("is_retweet") == true){
+                console.log("Lo que se quiere borrar es un retweet");
+                await this.auraRepository.executeQuery('\
+                MATCH (p:Post {id:$post_id})\
+                WITH p, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE NULL END AS originalId\
+                OPTIONAL MATCH (original: Post {id:originalId}) -[link: `RETWEETED_BY`]-> (p)\
+                DELETE link,p\
+                RETURN original\
+                ', {user_id: user_id, post_id:post_id, delete:"deleted"})
+                return
+
+            }
             await this.auraRepository.executeQuery('\
                 MATCH (p:Post {id:$post_id})\
-                WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
-                MATCH (targetPost: Post {id:ID})\
-                SET targetPost.deleted = true\
-                WITH targetPost\
-                MATCH (targetPost) -[:COMMENTED_BY]-> (d: Post)\
+                SET p.deleted = true\
+                WITH p\
+                MATCH (p) -[:COMMENTED_BY]-> (d: Post)\
                 SET d.origin_post = $delete\
-                RETURN targetPost\
+                RETURN p\
                 ', {user_id: user_id, post_id:post_id, delete:"deleted"})
+            await this.auraRepository.executeQuery('\
+            MATCH (p:Post {id:$post_id})\
+            SET p.deleted = true\
+            WITH p\
+            MATCH (p) -[link:RETWEETED_BY]-> (d: Post)\
+            DELETE link,d\
+            RETURN p\
+            ', {user_id: user_id, post_id:post_id, delete:"deleted"})
+
         }
 
         patch = async (twit: editTwit):Promise<void> => {
@@ -298,10 +320,12 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WHERE targetPost.id =\
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END\
                 WITH targetPost\
-                MATCH (targetPost)-[:RETWEETED_BY]-> (c:Post {created_by:$user_id})\
-                RETURN c',{post_id:post_id,user_id:user_id});
+                MATCH (targetPost)-[:RETWEETED_BY]-> (c:Post {created_by:$user_id, deleted:FALSE})\
+                RETURN c, c.is_retweet as is_retweet, c.id as post_id',{post_id:post_id,user_id:user_id});
             if (reposted_already.records.length > 0){
-                throw new AlreadyRetwitedError("User already retweeted this post");
+                logger.logInfo("Deleting Retweet");
+                await this.delete(reposted_already.records.at(0)?.get("post_id"), user_id);
+                return;
             }
             const original_post = await this.getById(post_id,user_id);
             if (original_post?.created_by === user_id){
@@ -333,7 +357,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 is_retweet: $is_retweet,\
                                 origin_post: $origin_post,\
                                 is_private: $is_private,\
-                                deleted: $deleted\
+                                deleted: $deleted,\
+                                is_blocked: $blocked\
                 })\
                 WITH c\
                 MATCH (p:Post {id:$post_id})\
@@ -345,7 +370,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 origin_post:origin_post,
                 post_id:redirect_post,
                 is_private: original_post?.is_private,
-                deleted:original_post?.deleted
+                deleted:original_post?.deleted,
+                blocked: original_post?.is_blocked
             })
         }
 
@@ -402,14 +428,16 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
+                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT d.is_private or d.created_by IN $idList or d.created_by = $user_id)\
                 WITH p,f, d, like, reply, retweet\
                 WITH p,f,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
+                WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user or postData.created_by in $idList)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                    WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 WITH p,f,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -432,7 +460,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                         userLikedPost as userLikedPost,\
                         userFavedPost as FavedPost,\
                         postData.deleted as deleted,\
-                        userRetweeted as userRetweeted\
+                        userRetweeted as userRetweeted,\
+                        postData.is_blocked as is_blocked\
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
                 ',
@@ -442,12 +471,12 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
             const result = await this.auraRepository.executeQuery('\
-                MATCH (p:Post {created_by: $userId})\
+                MATCH (p:Post {created_by: $userId, is_retweet: false})\
                 WHERE NOT p.deleted AND NOT p.is_blocked\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                     WHERE date(like.liked_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
-                    WHERE date(reply.created_at) >= date($period)\
+                    WHERE date(reply.created_at) >= date($period) AND NOT reply.deleted AND NOT reply.is_blocked\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
                     WHERE date(retweet.created_at) >= date($period)\
                 RETURN COUNT(DISTINCT like) as ammount_likes,\
@@ -479,21 +508,23 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted AND p.created_by <> $user_id AND (NOT p.is_private or p.created_by IN $idList)\
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
+                WHERE NOT postData.is_blocked AND NOT postData.deleted AND postData.created_by <> $user_id AND (NOT postData.is_private or postData.created_by IN $idList)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                    WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
                     CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
                     CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
                     CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
-                RETURN DISTINCT postData.id AS post_id,\
+                ORDER BY p.created_at DESC\
+                RETURN DISTINCT p.id AS post_id,\
                         postData.message AS message,\
                         postData.created_by AS created_by,\
                         postData.tags AS tags,\
@@ -508,8 +539,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                         userLikedPost as userLikedPost,\
                         userFavedPost as FavedPost,\
                         postData.deleted as deleted,\
-                        userRetweeted as userRetweeted\
-                ORDER BY created_at DESC\
+                        userRetweeted as userRetweeted,\
+                        postData.is_blocked as is_blocked\
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
                 ',
@@ -541,7 +572,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             liked: record.get("userLikedPost"),
                             favourite: record.get("FavedPost"),
                             deleted: record.get("deleted"),
-                            retweeted: record.get("userRetweeted")
+                            retweeted: record.get("userRetweeted"),
+                            is_blocked: record.get("is_blocked")
 
                         };
                 posts.push(obj)
@@ -555,6 +587,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                             MATCH (p:Post {id:$post_id}) -[:COMMENTED_BY]->(c:Post)\
                             WHERE NOT c.is_blocked AND NOT c.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
+                                WHERE NOT reply.is_blocked AND NOT reply.deleted\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\

@@ -18,7 +18,8 @@ export interface OverViewPost {
     liked: boolean,
     favourite:boolean,
     retweeted:boolean,
-    deleted: boolean
+    deleted: boolean,
+    is_blocked: boolean
 }
 
 export interface Like{
