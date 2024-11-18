@@ -427,11 +427,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                     \
                 OPTIONAL MATCH (d:Post {id: originalId})\
-                WHERE NOT d.is_blocked AND NOT d.deleted AND (NOT d.is_private or d.created_by IN $idList or d.created_by = $user_id)\
                 WITH p,f, d, like, reply, retweet\
                 WITH p,f,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
-                WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user or postData.created_by in $idList)\
+                WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user_id or postData.created_by in $idList)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
