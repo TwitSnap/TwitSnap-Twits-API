@@ -39,7 +39,7 @@
     "winston": "^3.14.2"
   },
   "scripts": {
-    "start": "node ./dist/app.js",
+    "start": "node ./dist/src/app.js",
     "dev": "nodemon -L -e ts --exec \"npm run swagger && npm run build &&  npm start\"",
     "build": "tsc",
     "swagger": "node src/utils/swagger/swagger.js",

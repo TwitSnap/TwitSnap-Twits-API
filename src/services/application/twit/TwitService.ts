@@ -140,8 +140,6 @@ export class TwitService {
 
 
     public getRecommendedAccounts = async (user_id: string, pagination: Pagination) => {
-        logger.logError("chau");
-        logger.logInfo("Estoy enun logg");
         const all_countries_locations =await this.getCountries();
         const user_info = await this.getRequestForUser(USERS_MS_URI + "/api/v1/users/",user_id);
         if (user_info){
