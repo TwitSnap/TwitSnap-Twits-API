@@ -1,9 +1,10 @@
+import "reflect-metadata";
 import { TwitAdminRepository } from './../../db/repositories/interfaces/TwitAdminRepository';
 import { TwitAdminController } from './../../api/controller/TwitAdminController';
 import { AuraTwitRepository } from './../../db/repositories/impls/Aura/AuraTwitRepository';
 
 import { container } from "tsyringe";
-import "reflect-metadata";
+
 import {DatabaseConnector} from "../../db/connectors/DatabaseConnector";
 import {Logger} from "../logger/Logger";
 import {LoggingStrategy} from "../logger/LoggingStrategy";

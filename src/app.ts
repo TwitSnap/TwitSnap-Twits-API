@@ -1,5 +1,5 @@
-import { AuraDataSource } from './db/connectors/dataSource';
 import "reflect-metadata";
+import { AuraDataSource } from './db/connectors/dataSource';
 import express from "express";
 import router from "./api/routes/routes";
 import cors from 'cors';

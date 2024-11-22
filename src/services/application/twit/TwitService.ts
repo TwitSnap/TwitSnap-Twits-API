@@ -1,6 +1,6 @@
-import { UserNamePhoto } from './../../domain/UserNamePhoto';
-import { logger, twitController } from './../../../utils/container/container';
-import { editTwit, Twit } from './../../domain/Twit';
+import { UserNamePhoto } from '../../domain/UserNamePhoto';
+import { logger, twitController } from '../../../utils/container/container';
+import { editTwit, Twit } from '../../domain/Twit';
 import { inject, injectable } from "tsyringe";
 import { TwitRepository } from "../../../db/repositories/interfaces/TwitRepository";
 import { CommentQuery } from '../../domain/Comment';
@@ -139,13 +139,17 @@ export class TwitService {
     }
 
 
-    public getRecommendedAccountsFor = async (user_id: string, pagination: Pagination) => {
+    public getRecommendedAccounts = async (user_id: string, pagination: Pagination) => {
+        logger.logError("chau");
+        logger.logInfo("Estoy enun logg");
         const all_countries_locations =await this.getCountries();
         const user_info = await this.getRequestForUser(USERS_MS_URI + "/api/v1/users/",user_id);
         if (user_info){
-            console.log(user_info.data);
-            const user_interests = user_info.data.interests;
-            console.log(user_interests);
+            let user_interests: string[] = user_info.data.interests;
+            if (user_interests.length == 0){
+                let possible_interests = await axios.get(USERS_MS_URI+ "/api/v1/interests/");
+                user_interests = possible_interests.data.interests;
+            }
             const users_with_similar_interactions = await this.twitRepository.getAccountsFor(user_interests);
             let users = await (await this.getUserData(users_with_similar_interactions)).slice(pagination.offset);
             if (users.length > pagination.limit){

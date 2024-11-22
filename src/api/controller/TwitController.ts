@@ -245,8 +245,8 @@ export class TwitController extends Controller{
         try{
             const user_id = await this.obtainIdFromToken(req);
             const pagination = this.getPagination(req);
-            logger.logInfo("Se busca cuentas recomendadas para el usuario: "+ user_id);
-            const accounts = await this.twitService.getRecommendedAccountsFor(user_id,pagination);
+            logger.logInfo("Se busca  "+ user_id);
+            const accounts = await this.twitService.getRecommendedAccounts(user_id,pagination);
             return this.okResponse(res,accounts);
         }
         catch(e){
