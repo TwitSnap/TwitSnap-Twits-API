@@ -1,3 +1,4 @@
+import { UserNamePhoto } from './../../domain/UserNamePhoto';
 import { logger, twitController } from './../../../utils/container/container';
 import { editTwit, Twit } from './../../domain/Twit';
 import { inject, injectable } from "tsyringe";
@@ -136,6 +137,25 @@ export class TwitService {
     public deleteTwit = async (user_id: string, post_id: string) => {
         await this.twitRepository.delete(post_id,user_id)
     }
+
+
+    public getRecommendedAccountsFor = async (user_id: string, pagination: Pagination) => {
+        const all_countries_locations =await this.getCountries();
+        const user_info = await this.getRequestForUser(USERS_MS_URI + "/api/v1/users/",user_id);
+        if (user_info){
+            console.log(user_info.data);
+            const user_interests = user_info.data.interests;
+            console.log(user_interests);
+            const users_with_similar_interactions = await this.twitRepository.getAccountsFor(user_interests);
+            let users = await (await this.getUserData(users_with_similar_interactions)).slice(pagination.offset);
+            if (users.length > pagination.limit){
+                users.length = pagination.limit;
+            }
+            return users;
+            
+        }
+        return;
+    }
        /**
      * Handles errors related to the external HTTP request.
      * @param {any} e - The error object from the failed request.
@@ -159,34 +179,41 @@ export class TwitService {
         }
     }
 
-
-    private getUsersFromPosts = async (posts:OverViewPost[]) => {
-        let users = new Map<string, {username:string,photo:string}>();
+    private getUserData = async (ids: string[]) => {
+        let users = [];
         const url = USERS_MS_URI + "/api/v1/users/"
-        /*
-        for await (let [idx, post] of posts.entries()){
+        for await (let id of ids){
             try{
-                const request = await this.getRequestForUser(url,post.created_by)
+                const request = await this.getRequestForUser(url,id);
                 if (request){
-                    posts[idx].photo_creator = request.data.photo;
-                    posts[idx].username_creator = request.data.username
-                }
-                if (posts[idx].deleted){
-                    posts[idx].photo_creator = "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f";
-                    posts[idx].username_creator = "DELETED";
-                    posts[idx].message = "Post Deleted"
+                    let user: UserNamePhoto = {
+                        username: request.data.username,
+                        photo: request.data.photo,
+                        id: id,
+                    }
+                    users.push(user)
                 }
             }
             catch(e){
                 if (e instanceof InvalidCredentialsError) {
-                    posts[idx].username_creator = "DELETED";
-                    continue;
-                   } else {
+                    let user: UserNamePhoto = {
+                        username: "DELETED",
+                        photo: "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f",
+                        id: id
+                    }
+                    users.push(user);
+                    } else {
                      throw e; // let others bubble up
-                   }
+                    }
             }
         }
-        */
+        return users;
+    }
+
+
+    private getUsersFromPosts = async (posts:OverViewPost[]) => {
+        let users = new Map<string, {username:string,photo:string}>();
+        const url = USERS_MS_URI + "/api/v1/users/"
         const usuarios = await Promise.all(posts.map(async (file) => {
             try{
                 const request = await this.getRequestForUser(url,file.created_by)
@@ -265,5 +292,21 @@ export class TwitService {
             lista_amigos.push(element.uid);
         })
         return lista_amigos;
+    }
+
+    private getCountries = async () => {
+        const request = await axios.get("http://api.geonames.org/countryInfoJSON", {params: {username:"juanhosz"}}).catch(e => {
+            logger.logDebugFromEntity(`Attempt HTTP request
+                ID: ${new Date().toISOString()}
+                URL: ${"http://api.geonames.org/countryInfoJSON"}
+                Status: ${e.response?.status}
+                Result: FAILED`
+            , this.constructor);
+            this.handleRequestError(e)
+        });
+        if (request){
+            return request.data;
+        }
+        return {geonames: []}
     }
 }

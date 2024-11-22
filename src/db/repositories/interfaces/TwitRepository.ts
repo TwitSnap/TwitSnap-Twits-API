@@ -42,5 +42,7 @@ export interface TwitRepository {
 
     saveFavorite: (user_id: string, post_id: string) => Promise<void>;
 
-    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>) => Promise<OverViewPost[]>
+    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>) => Promise<OverViewPost[]>;
+
+    getAccountsFor: (user_interests:string[]) => Promise<string[]>;
 }

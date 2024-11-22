@@ -1,3 +1,4 @@
+import { registerUserDoc } from './../../../../utils/swagger/docs/UserControllerDocs';
 import { comment, OverViewPost, OverViewPosts, Post } from './../../../../services/domain/Post';
 import { BadRequestError } from './../../../../api/errors/BadRequestError';
 import { CommentQuery } from './../../../../services/domain/Comment';
@@ -71,7 +72,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             const record = ans.records.at(0);
             // ACORDARSE POSTDATA es la data del original (si existe) y p es del tweet recien creado
             if (!record){
-                throw new TwitNotFoundError("");
+                throw new TwitNotFoundError("No se encontro el twit pedido");
             }
             const post: OverViewPost = {
                 message:record.get("message"),
@@ -337,7 +338,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     MATCH (p:Post {created_by:$user_id,id:$post_id})\
                     RETURN p',{post_id:original_post.origin_post,user_id:user_id});
                 if (own_post.records.length > 0){
-                    throw new AlreadyLikedError("User cant retweet Own post");
+                    throw new AlreadyRetwitedError("User cant retweet Own post");
                 }    
                 origin_post = original_post.origin_post;
                 redirect_post = original_post.origin_post;
@@ -548,6 +549,91 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 return posts;
         }
 
+        public getAccountsFor = async (user_interests: string[]): Promise<string[]> => {
+            let activity = new Map<string, Number>()
+            const posts = await this.auraRepository.executeQuery('\
+            MATCH (p:Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:false})\
+            WHERE ANY(tag IN p.tags WHERE tag IN $interests) \
+            RETURN p.created_by as user, COUNT(p) as ammount_posts\
+            ',{interests:user_interests});
+            for (let record of posts.records){
+                let actividad_de_usuario = activity.get(record.get("user"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("user"),Number(actividad_de_usuario) + Number(record.get("ammount_posts")));
+                }
+                else{
+                    activity.set(record.get("user"),Number(record.get("ammount_posts")));
+                }
+            }
+            const retweets = await this.auraRepository.executeQuery('\
+            MATCH (p:Post {is_retweet:true, is_blocked:false, deleted:false,is_comment:false})\
+            WITH p\
+            MATCH (original: Post)-[:RETWEETED_BY]-> (p)\
+            OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (original)\
+            WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
+            WITH p, \
+                original, \
+                CASE \
+                    WHEN firstPost IS NOT NULL THEN firstPost \
+                    ELSE original \
+                    END AS targetPost\
+            WHERE ANY(tag IN original.tags WHERE tag IN $interests) \
+            RETURN p.created_by as user, COUNT(p) as ammount_retweets\
+            ',{interests:user_interests});
+            for (let record of retweets.records){
+                let actividad_de_usuario = activity.get(record.get("user"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("user"),Number(actividad_de_usuario) + Number(record.get("ammount_retweets")));
+                }
+                else{
+                    activity.set(record.get("user"),Number(record.get("ammount_retweets")));
+                }
+            }
+
+            const comments = await this.auraRepository.executeQuery('\
+            MATCH (p: Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:true})\
+            OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (p)\
+            WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
+            WITH p,firstPost\
+            WHERE ANY(tag IN firstPost.tags WHERE tag IN $interests)\
+            RETURN p.created_by as user, COUNT(p) as ammount_comments\
+            ', {interests:user_interests})
+            for (let record of comments.records){
+                let actividad_de_usuario = activity.get(record.get("user"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("user"),Number(actividad_de_usuario) + Number(record.get("ammount_comments")));
+                }
+                else{
+                    activity.set(record.get("user"),Number(record.get("ammount_comments")));
+                }
+            }
+
+            const likes = await this.auraRepository.executeQuery('\
+            MATCH  (like: Like)\
+            WITH like\
+            MATCH (p:Post {deleted:false, is_blocked:false})-[:LIKED_BY]->(like)\
+            WITH p,like\
+            OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (p)\
+            WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
+            WITH p,like, CASE WHEN firstPost IS NOT NULL THEN firstPost ELSE p END as targetPost\
+            WHERE ANY(tag IN targetPost.tags WHERE tag IN $interests)\
+            RETURN like.liked_by as user, COUNT(like) as ammount_likes\
+            ',{interests:user_interests})
+            for (let record of likes.records){
+                let actividad_de_usuario = activity.get(record.get("user"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("user"),Number(actividad_de_usuario) + Number(record.get("ammount_likes")));
+                }
+                else{
+                    activity.set(record.get("user"),Number(record.get("ammount_likes")));
+                }
+            }
+            let sorted = Array.from(activity.entries()) // Convert Map to an array of entries
+                .sort((a, b) => Number(b[1]) - Number(a[1]) )  // Sort by the value (ascending order)
+                .map(([key]) => key);         // Extract the keys
+                return sorted;
+        }
+
         private formatPosts = async (result: EagerResult) => {
             const records = result.records;
             let posts = []
@@ -577,6 +663,15 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 posts.push(obj)
             }
             return posts;   
+        }
+
+        private formatUsers = async (result: EagerResult) => {
+            const records = result.records;
+            let ids = [];
+            for (let record of records){
+                ids.push(record.get("user"));
+            }
+            return ids;
         }
 
 

@@ -18,6 +18,8 @@ router.get("/v1/twit/post/comments",twitController.getCommentsFromPost);
 router.get("/v1/twit/posts/user",twitController.getAllPostsFromUser);
 router.get("/v1/twit/user/stats",twitController.getStats);
 router.get("/v1/twit/feed",twitController.getFeed);
+router.get("/v1/twit/user/recommendation", twitController.getRecommendedAccounts);
+
 
 
 // Admin User Routes

@@ -241,8 +241,20 @@ export class TwitController extends Controller{
         }
     }
 
+    public getRecommendedAccounts = async  (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = await this.obtainIdFromToken(req);
+            const pagination = this.getPagination(req);
+            logger.logInfo("Se busca cuentas recomendadas para el usuario: "+ user_id);
+            const accounts = await this.twitService.getRecommendedAccountsFor(user_id,pagination);
+            return this.okResponse(res,accounts);
+        }
+        catch(e){
+            next(e);
+        }
+    }
+
     private obtainIdFromToken = async (req:Request) => {
-        logger.logInfo("Request header is " + JSON.stringify(req.headers));
         const userId = req.headers.user_id as string;
         
         if (! userId){
