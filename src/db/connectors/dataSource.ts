@@ -6,10 +6,25 @@ import * as neo4j from "neo4j-driver";
  * The data source for TypeORM, configured with the database connection settings.
  */
 export const AppDataSource = new DataSource(getDatabaseConfig());
-const URI = 'neo4j+s://6c984834.databases.neo4j.io'
-const USER = 'neo4j'
-const PASSWORD = 'W-cBcC_cILMwOnGYW3GN1cVjZ7WaHziBURguYziakFU';
-export const AuraDataSource = neo4j.driver(URI,  neo4j.auth.basic(USER, PASSWORD));
+
+
+export let AuraDataSource: neo4j.Driver;
+if (process.env.NODE_ENV === "test"){
+    console.log("Son pruebas");
+    const URI = 'neo4j+s://5cc615e7.databases.neo4j.io';
+    const USER = "neo4j";
+    const PASSWORD = "8OAPUxxVWs3_QOB8pIZmTf9qDW4bLM5vKBR8zRWGXm8";
+    const newAuraDriver = neo4j.driver(URI,  neo4j.auth.basic(USER, PASSWORD));
+    AuraDataSource = neo4j.driver(URI,  neo4j.auth.basic(USER, PASSWORD));
+}
+else{
+    const URI = 'neo4j+s://6c984834.databases.neo4j.io'
+    const USER = 'neo4j'
+    const PASSWORD = 'W-cBcC_cILMwOnGYW3GN1cVjZ7WaHziBURguYziakFU';
+    console.log("No son pruebas");
+    AuraDataSource = neo4j.driver(URI,  neo4j.auth.basic(USER, PASSWORD));
+
+}
 /**
  * Retrieves the database configuration for TypeORM.
  *

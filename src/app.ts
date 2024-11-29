@@ -1,14 +1,17 @@
+import { AuraDatabaseConnectorStrategy } from './db/connectors/AuraDatabaseConnectorStrategy';
+import { DatabaseConnectorStrategy } from './db/connectors/DatabaseConnectorStrategy';
 import "reflect-metadata";
 import { AuraDataSource } from './db/connectors/dataSource';
 import express from "express";
 import router from "./api/routes/routes";
 import cors from 'cors';
 import {errorMiddleware} from "./api/errors/handling/ErrorHandler";
-import {databaseConnector} from "./utils/container/container";
 import {logger} from "./utils/container/container";
 import {PORT} from "./utils/config";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from './utils/swagger/docs/swaggerDocs.json';
+import { container, inject, injectable } from "tsyringe";
+import * as neo4j from "neo4j-driver";
 
 const app = express();
 
@@ -19,12 +22,15 @@ app.use(errorMiddleware);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-AuraDataSource.getServerInfo().then(() => {
+const databaseConnector: AuraDatabaseConnectorStrategy = container.resolve("DatabaseConnectorStrategy");
+databaseConnector.initializeConnection().then(() => {
     app.listen(PORT, () => {
         logger.logInfo(`Server is running on port ${PORT}`);
     });
 }).catch(() => {
     logger.logError("Error in connectin to Aura Database")
 });
+
+
 
 export default app;

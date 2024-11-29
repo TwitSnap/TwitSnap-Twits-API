@@ -1,34 +1,41 @@
+import { inject, injectable } from 'tsyringe';
 import { DataSource } from "typeorm";
 import { DatabaseConnectorStrategy } from "./DatabaseConnectorStrategy";
 import { AppDataSource } from "./dataSource";
+import * as neo4j from "neo4j-driver";
+import { logger } from '../../utils/container/container';
 
-export class AuraDatabaseConnectorStrategy implements DatabaseConnectorStrategy<DataSource, DataSource> {
-    private readonly _instance: DataSource;
+@injectable()
+export class AuraDatabaseConnectorStrategy implements DatabaseConnectorStrategy<neo4j.Driver, neo4j.Driver> {
+    private readonly _instance: neo4j.Driver;
 
-    constructor() {
-        this._instance = AppDataSource;
+    constructor(@inject("AuraDriver") AuraDataSource: neo4j.Driver) {
+        this._instance = AuraDataSource;
     }
 
     /**
      *  @inheritDoc
      */
-    public initializeConnection = async (): Promise<DataSource> => {
-        return this.instance.initialize();
+    public initializeConnection = async (): Promise<neo4j.Driver> => {
+        console.log("Se inicializa con aura db");
+        console.log("Y los datos de la conexion son: ");
+        logger.logDebug(String(await (await this._instance.getServerInfo()).address));
+        return this.instance;
     };
 
 
     /**
      *  @inheritDoc
      */
-    public getDataSource = (): DataSource => {
-        return this.instance;
+    public getDataSource = (): neo4j.Driver => {
+        return this._instance;
     };
 
     /**
      *  @inheritDoc
      */
     public shutdownConnection = (): Promise<void> => {
-        return this.instance.destroy();
+        return this.instance.close();
     };
 
         /**
@@ -38,7 +45,7 @@ export class AuraDatabaseConnectorStrategy implements DatabaseConnectorStrategy<
      *
      * @returns {DataSource} The `readonly` `DataSource` instance.
      */
-    private get instance(): DataSource {
+    private get instance(): neo4j.Driver {
         return this._instance;
     }
 }
