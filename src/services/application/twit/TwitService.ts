@@ -71,7 +71,9 @@ export class TwitService {
         }
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
         console.log(lista_following);
-        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,lista_following);
+        let lista_baneados: string[] = await this.getBannedUsers();
+        console.log(lista_baneados);
+        let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,lista_following, lista_baneados);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
 
@@ -103,7 +105,8 @@ export class TwitService {
     }
 
     public getCommentsFromPost = async (post_id: string, pagination: Pagination, user_id: string) => {
-        let comments = await this.twitRepository.getCommentsFrom(post_id,pagination, user_id);
+        let lista_baneados = await this.getBannedUsers();
+        let comments = await this.twitRepository.getCommentsFrom(post_id,pagination, user_id, lista_baneados);
         await this.getUsersFromPosts(comments);
         return comments;
     }
@@ -112,13 +115,15 @@ export class TwitService {
         // TODO: AGREGAR UNA REQUEST A USUARIOS PARA VER LOS SETTINGS DE PRIVACIDAD
         const following: Array<any> = await this.getAllFollowingOf(user_id);
         const lista_followers = this.getFollowingList(following);
-        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id, lista_followers)
+        let lista_baneados = await this.getBannedUsers();
+        let posts = await this.twitRepository.getFavoritesFrom(target_id, pagination,user_id, lista_followers, lista_baneados);
         await this.getUsersFromPosts(posts);
         return posts
     }
 
     public getStatsFromPeriod = async (userId: string, period: string) => {
-        const stats = await this.twitRepository.getStatsFromPeriod(userId, period);
+        let lista_baneados = await this.getBannedUsers();
+        const stats = await this.twitRepository.getStatsFromPeriod(userId, period, lista_baneados);
         return stats;
     }
 
@@ -126,7 +131,8 @@ export class TwitService {
         const following: Array<any> = await this.getAllFollowingOf(user_id);
         const lista_followers = this.getFollowingList(following);
         console.log(lista_followers);
-        const feed = await this.twitRepository.getFeedFor(user_id, pagination,lista_followers);
+        let lista_baneados = await this.getBannedUsers();
+        const feed = await this.twitRepository.getFeedFor(user_id, pagination,lista_followers, lista_baneados);
         let posts = feed?.posts
         console.log(posts)
         logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
@@ -142,13 +148,14 @@ export class TwitService {
     public getRecommendedAccounts = async (user_id: string, pagination: Pagination) => {
         const all_countries_locations =await this.getCountries();
         const user_info = await this.getRequestForUser(USERS_MS_URI + "/api/v1/users/",user_id);
+        let lista_baneados = await this.getBannedUsers();
         if (user_info){
             let user_interests: string[] = user_info.data.interests;
             if (user_interests.length == 0){
                 let possible_interests = await axios.get(USERS_MS_URI+ "/api/v1/interests/");
                 user_interests = possible_interests.data.interests;
             }
-            const users_with_similar_interactions = await this.twitRepository.getAccountsFor(user_interests);
+            const users_with_similar_interactions = await this.twitRepository.getAccountsFor(user_interests, lista_baneados,user_id);
             let users = await (await this.getUserData(users_with_similar_interactions)).slice(pagination.offset);
             if (users.length > pagination.limit){
                 users.length = pagination.limit;
@@ -310,5 +317,25 @@ export class TwitService {
             return request.data;
         }
         return {geonames: []}
+    }
+
+    private getBannedUsers = async () => {
+        const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {params: {is_banned:true,offset:0,limit:1000}}).catch( e => {
+            logger.logDebugFromEntity(`Attempt HTTP request
+            ID: ${new Date().toISOString()}
+            URL: ${"http://api.geonames.org/countryInfoJSON"}
+            Status: ${e.response?.status}
+            Result: FAILED`
+        , this.constructor);
+        this.handleRequestError(e)
+        })
+        if (request){
+            let array : any[] = request.data.users;
+            let lista_baneados: string[] = array.map( user => {
+                return user.uid;
+            })
+            return lista_baneados
+        }
+        return []
     }
 }

@@ -163,10 +163,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             )
         }
     
-        getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string, following: Array<string>): Promise< OverViewPosts> =>{
+        getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string, following: Array<string>, banned_ids: string[]): Promise< OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
             MATCH (p:Post {created_by:$id})\
-            WHERE NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
+            WHERE NOT p.created_by  in $banned_users AND NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by = $user or p.created_by in $idList)\
             OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
             OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
             OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -177,12 +177,14 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             WITH p, d, like, reply, retweet\
             WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
             like, reply, retweet\
-            WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user or postData.created_by in $idList)\
+            WHERE NOT postData.created_by in $banned_users AND NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user or postData.created_by in $idList)\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                WHERE NOT originalLike.liked_by  IN $banned_users\
             OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                WHERE NOT originalRetweet.created_by  IN $banned_users\
             OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
+                WHERE NOT originalReply.created_by  IN $banned_users AND NOT originalReply.is_blocked AND NOT originalReply.deleted\
             OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
             OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user})\
             WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -210,7 +212,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             SKIP toInteger($offset)\
             LIMIT toInteger($limit)\
             ',
-            {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited, user:user_id, idList: following})
+            {id:id,offset:pagination.offset,limit:pagination.limit, is_prohibited:is_prohibited, user:user_id, idList: following, banned_users: banned_ids})
             const posts = {posts:await this.formatPosts(result)};
 
             return posts;
@@ -416,11 +418,11 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return
         }
 
-        getFavoritesFrom = async (target_id: string, pagination: Pagination, user_id: string,following: Array<string>): Promise<OverViewPost[]> => {
+        getFavoritesFrom = async (target_id: string, pagination: Pagination, user_id: string,following: Array<string>, banned_ids: string[]): Promise<OverViewPost[]> => {
             const result= await this.auraRepository.executeQuery('\
                 MATCH (f: Favorite {favored_by: $target_id})\
                 MATCH (p:Post {id:f.post_id})\
-                WHERE NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
+                WHERE  NOT p.created_by IN $banned_users AND NOT p.is_blocked AND NOT p.deleted AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id)\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
@@ -431,12 +433,14 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WITH p,f, d, like, reply, retweet\
                 WITH p,f,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
-                WHERE NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user_id or postData.created_by in $idList)\
+                WHERE  NOT postData.created_by IN $banned_users AND NOT postData.is_blocked AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by = $user_id or postData.created_by in $idList)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                    WHERE NOT originalLike.liked_by  IN $banned_users\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                    WHERE NOT originalRetweet  IN $banned_users\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                    WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
+                    WHERE  NOT originalReply.created_by IN $banned_users AND NOT originalReply.is_blocked AND NOT originalReply.deleted\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 WITH p,f,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -464,24 +468,24 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
                 ',
-                {offset:pagination.offset,limit:pagination.limit, target_id:target_id, user_id:user_id,idList:following})
+                {offset:pagination.offset,limit:pagination.limit, target_id:target_id, user_id:user_id,idList:following, banned_users:banned_ids})
                 return this.formatPosts(result)
         }
 
-        getStatsFromPeriod = async (user_id: string, period: string) : Promise<Stats> =>{
+        getStatsFromPeriod = async (user_id: string, period: string, banned_ids: string[]) : Promise<Stats> =>{
             const result = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {created_by: $userId, is_retweet: false})\
                 WHERE NOT p.deleted AND NOT p.is_blocked\
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
-                    WHERE date(like.liked_at) >= date($period)\
+                    WHERE NOT like.liked_by  IN $banned_users AND date(like.liked_at) >= date($period)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
-                    WHERE date(reply.created_at) >= date($period) AND NOT reply.deleted AND NOT reply.is_blocked\
+                    WHERE NOT reply.created_by  IN $banned_users AND date(reply.created_at) >= date($period) AND NOT reply.deleted AND NOT reply.is_blocked\
                 OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
-                    WHERE date(retweet.created_at) >= date($period)\
+                    WHERE NOT retweet.created_by  IN $banned_users AND date(retweet.created_at) >= date($period)\
                 RETURN COUNT(DISTINCT like) as ammount_likes,\
                         COUNT(DISTINCT retweet) as ammount_retweets,\
                         COUNT(DISTINCT reply) as ammount_comments\
-                ',{userId:user_id,period:period})
+                ',{userId:user_id,period:period, banned_users:banned_ids})
             const record = result.records.at(0);
             const stats: Stats = {
                 likes: Number(record?.get("ammount_likes")),
@@ -491,14 +495,14 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             return stats;
         }
 
-        public getCommentsFrom = async (post_id: string, pagination:Pagination,user_id:string): Promise<OverViewPost[]> => {
-            return this.getComments(post_id,pagination,user_id);
+        public getCommentsFrom = async (post_id: string, pagination:Pagination,user_id:string, banned_ids: string[]): Promise<OverViewPost[]> => {
+            return this.getComments(post_id,pagination,user_id, banned_ids);
         }
 
-        public getFeedFor = async (user_id: string, pagination: Pagination, following: Array<string>): Promise<OverViewPosts> =>{
+        public getFeedFor = async (user_id: string, pagination: Pagination, following: Array<string>, banned_ids: string[]): Promise<OverViewPosts> =>{
             const result= await this.auraRepository.executeQuery('\
                 MATCH (p:Post {is_comment:false})\
-                WHERE NOT p.is_blocked AND NOT p.deleted AND p.created_by <> $user_id AND p.created_at > localdatetime() - duration("P7D")\
+                WHERE NOT p.created_by  IN $banned_users AND NOT p.is_blocked AND NOT p.deleted AND p.created_by <> $user_id\
                         AND (NOT p.is_private or p.created_by IN $idList) \
                 OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
                 OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -510,12 +514,14 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 WITH p, d, like, reply, retweet\
                 WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
                 like, reply, retweet\
-                WHERE NOT postData.is_blocked AND NOT postData.deleted AND postData.created_by <> $user_id AND (NOT postData.is_private or postData.created_by IN $idList)\
+                WHERE  NOT postData.created_by IN $banned_users AND NOT postData.is_blocked AND NOT postData.deleted AND postData.created_by <> $user_id AND (NOT postData.is_private or postData.created_by IN $idList)\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                    WHERE  NOT originalLike.liked_by IN $banned_users\
                 OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                    WHERE NOT originalRetweet.created_by  IN $banned_users\
                 OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
-                    WHERE NOT originalReply.is_blocked AND NOT originalReply.deleted\
+                    WHERE NOT originalReply.created_by  IN $banned_users AND NOT originalReply.is_blocked AND NOT originalReply.deleted\
                 OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
                 OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
                 WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
@@ -543,19 +549,18 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 SKIP toInteger($offset)\
                 LIMIT toInteger($limit)\
                 ',
-                {user_id:user_id,offset:pagination.offset,limit:pagination.limit,idList:following})
-                console.log(result.records)
+                {user_id:user_id,offset:pagination.offset,limit:pagination.limit,idList:following, banned_users:banned_ids})
                 const posts = {posts:await this.formatPosts(result)};
                 return posts;
         }
 
-        public getAccountsFor = async (user_interests: string[]): Promise<string[]> => {
+        public getAccountsFor = async (user_interests: string[], banned_ids: string[], user_id:string): Promise<string[]> => {
             let activity = new Map<string, Number>()
             const posts = await this.auraRepository.executeQuery('\
             MATCH (p:Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:false})\
-            WHERE ANY(tag IN p.tags WHERE tag IN $interests) \
+            WHERE p.created_by <> $user_id AND NOT p.created_by  IN $banned_users AND ANY(tag IN p.tags WHERE tag IN $interests) \
             RETURN p.created_by as user, COUNT(p) as ammount_posts\
-            ',{interests:user_interests});
+            ',{interests:user_interests, banned_users: banned_ids, user_id});
             for (let record of posts.records){
                 let actividad_de_usuario = activity.get(record.get("user"));
                 if (actividad_de_usuario){
@@ -567,6 +572,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             }
             const retweets = await this.auraRepository.executeQuery('\
             MATCH (p:Post {is_retweet:true, is_blocked:false, deleted:false,is_comment:false})\
+                WHERE p.created_by <> $user_id AND NOT p.created_by  IN $banned_users\
             WITH p\
             MATCH (original: Post)-[:RETWEETED_BY]-> (p)\
             OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (original)\
@@ -579,7 +585,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     END AS targetPost\
             WHERE ANY(tag IN original.tags WHERE tag IN $interests) \
             RETURN p.created_by as user, COUNT(p) as ammount_retweets\
-            ',{interests:user_interests});
+            ',{interests:user_interests, banned_users: banned_ids, user_id});
             for (let record of retweets.records){
                 let actividad_de_usuario = activity.get(record.get("user"));
                 if (actividad_de_usuario){
@@ -592,12 +598,13 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
             const comments = await this.auraRepository.executeQuery('\
             MATCH (p: Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:true})\
+                WHERE p.created_by <> $user_id AND NOT p.created_by  IN $banned_users\
             OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (p)\
             WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
             WITH p,firstPost\
             WHERE ANY(tag IN firstPost.tags WHERE tag IN $interests)\
             RETURN p.created_by as user, COUNT(p) as ammount_comments\
-            ', {interests:user_interests})
+            ', {interests:user_interests, banned_users:banned_ids, user_id})
             for (let record of comments.records){
                 let actividad_de_usuario = activity.get(record.get("user"));
                 if (actividad_de_usuario){
@@ -610,6 +617,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
             const likes = await this.auraRepository.executeQuery('\
             MATCH  (like: Like)\
+                WHERE like.liked_by <> $user_id AND NOT like.liked_by  IN $banned_users\
             WITH like\
             MATCH (p:Post {deleted:false, is_blocked:false})-[:LIKED_BY]->(like)\
             WITH p,like\
@@ -618,7 +626,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             WITH p,like, CASE WHEN firstPost IS NOT NULL THEN firstPost ELSE p END as targetPost\
             WHERE ANY(tag IN targetPost.tags WHERE tag IN $interests)\
             RETURN like.liked_by as user, COUNT(like) as ammount_likes\
-            ',{interests:user_interests})
+            ',{interests:user_interests, banned_users:banned_ids, user_id})
             for (let record of likes.records){
                 let actividad_de_usuario = activity.get(record.get("user"));
                 if (actividad_de_usuario){
@@ -675,16 +683,18 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         }
 
 
-        private getComments = async (post_id:string, pagination: Pagination, user_id: string) => {
+        private getComments = async (post_id:string, pagination: Pagination, user_id: string, banned_ids: string[]) => {
             const query = await this.auraRepository.executeQuery('\
                             MATCH (p:Post {id:$post_id})\
                             WITH p, CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS originalId\
                             MATCH (d:Post {id:originalId}) -[:COMMENTED_BY]->(c:Post)\
-                            WHERE NOT c.is_blocked AND NOT c.deleted\
+                            WHERE NOT c.created_by  IN $banned_users AND NOT c.is_blocked AND NOT c.deleted\
                             OPTIONAL MATCH (c)-[:COMMENTED_BY*]->(reply:Post)\
-                                WHERE NOT reply.is_blocked AND NOT reply.deleted\
+                                WHERE  NOT reply.created_by IN $banned_users AND NOT reply.is_blocked AND NOT reply.deleted\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweet: Post)\
+                                WHERE NOT retweet.created_by  IN $banned_users\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(like:Like)\
+                                WHERE NOT like.liked_by  IN $banned_users\
                             OPTIONAL MATCH (c)-[:LIKED_BY]->(userLiked:Like {liked_by: $user})\
                             OPTIONAL MATCH (f: Favorite {post_id: c.id, favored_by: $user})\
                             OPTIONAL MATCH (c)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user})\
@@ -700,7 +710,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                     userFavedPost as FavedPost, c.deleted as deleted, userRetweeted as userRetweeted, c.is_blocked as is_blocked\
                             SKIP toInteger($offset)\
                             LIMIT toInteger($limit)\
-                            ',{post_id,offset:pagination.offset,limit:pagination.limit, user:user_id})
+                            ',{post_id,offset:pagination.offset,limit:pagination.limit, user:user_id, banned_users:banned_ids})
                             
             let coms = this.formatPosts(query)
             return coms

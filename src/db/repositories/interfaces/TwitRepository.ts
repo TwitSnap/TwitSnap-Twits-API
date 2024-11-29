@@ -24,17 +24,17 @@ export interface TwitRepository {
 
     comment_post: (comment:CommentQuery) => Promise<EagerResult>
 
-    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string, follwing: Array<string>) => Promise<OverViewPosts>;
+    getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string, follwing: Array<string>, banned_ids: string[]) => Promise<OverViewPosts>;
 
     likeTwit: (post_id: string, user_id: string) => Promise<void>;
 
     retwit: (post_id: string, user_id: string) => Promise<void>;
 
-    getCommentsFrom: (post_id: string, pagination: Pagination, user_id:string) => Promise<OverViewPost[]>
+    getCommentsFrom: (post_id: string, pagination: Pagination, user_id:string, banned_ids: string[]) => Promise<OverViewPost[]>
 
-    getStatsFromPeriod: (user_id: string, period: string) => Promise<Stats>;
+    getStatsFromPeriod: (user_id: string, period: string, banned_ids: string[]) => Promise<Stats>;
 
-    getFeedFor: (user_id: string, pagination: Pagination, following: Array<string>) => Promise<OverViewPosts>;
+    getFeedFor: (user_id: string, pagination: Pagination, following: Array<string>, banned_ids: string[]) => Promise<OverViewPosts>;
 
     delete: (post_id: string, user_id: string) => Promise<void>;
 
@@ -42,7 +42,7 @@ export interface TwitRepository {
 
     saveFavorite: (user_id: string, post_id: string) => Promise<void>;
 
-    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>) => Promise<OverViewPost[]>;
+    getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>, banned_ids: string[]) => Promise<OverViewPost[]>;
 
-    getAccountsFor: (user_interests:string[]) => Promise<string[]>;
+    getAccountsFor: (user_interests:string[], banned_ids: string[], user_id:string) => Promise<string[]>;
 }

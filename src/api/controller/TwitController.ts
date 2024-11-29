@@ -233,7 +233,6 @@ export class TwitController extends Controller{
             const pagination = this.getPagination(req);
             logger.logInfo("Se intenta Buscar el feed del usuario: " + user_id)
             const result = await this.twitService.getFeedFor(user_id,pagination);
-            logger.logInfo(JSON.stringify(result));
             return this.okResponse(res,result);
         }
         catch(e){
