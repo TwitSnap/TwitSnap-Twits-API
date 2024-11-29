@@ -109,7 +109,7 @@ describe('User Interacions', () => {
         expect(delete_response.status == 409);
     })
 
-    it ("Another user not follower shouldnt be a", async () => {
+    it ("Another user not follower shouldnt be able to see comment to private", async () => {
         mAxios.get.mockResolvedValue({data:{following:[{uid:3}]}});
         let lista_posts = await obtainPostsFromUserExecutedBy("1","2");
         let posts: any[] = lista_posts.body.posts;
