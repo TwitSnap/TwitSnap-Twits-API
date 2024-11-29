@@ -56,8 +56,9 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
     }
 
     public getAllPosts = async (pagination: Pagination, filter_by_id: boolean, user: string) : Promise<OverViewPostAdmin[]> => {
+        
         const result= await this.auraRepository.executeQuery('\
-        MATCH (p:Post)\
+        MATCH (p:Post {is_retweet:false})\
         WHERE NOT p.deleted AND (($filterById AND p.created_by = $optional_user) OR NOT $filterById)\
         OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
         OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
@@ -96,6 +97,29 @@ export class AuraTwitAdminRepository extends AuraRepository implements TwitAdmin
         ',
         {offset:pagination.offset,limit:pagination.limit, filterById:filter_by_id, optional_user: user})
         return this.formatPosts(result);
+    }
+
+    public getAmmountPosts = async (filter_by_id: boolean, optional_user: string): Promise<Number> => {
+        const ammount_of_posts = await this.auraRepository.executeQuery('\
+        MATCH (p:Post {is_retweet:false})\
+        WHERE NOT p.deleted AND (($filterById AND p.created_by = $optional_user) OR NOT $filterById)\
+        OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+        OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+        OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+        WITH p, like, reply, retweet,\
+            CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+            \
+        OPTIONAL MATCH (d:Post {id: originalId})\
+        WHERE NOT d.deleted\
+        WITH p, d, like, reply, retweet\
+        WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+        like, reply, retweet\
+        RETURN COUNT(DISTINCT postData) as ammount_twits\
+        ',{filterById:filter_by_id, optional_user: optional_user})
+        const ammount = ammount_of_posts.records[0].get("ammount_twits");
+        console.log(ammount_of_posts.records);
+        console.log(Number(ammount));
+        return ammount;
     }
 
     public blockPost = async (post_id: string): Promise<void> => {

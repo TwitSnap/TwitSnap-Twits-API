@@ -30,7 +30,8 @@ export class TwitAdminService {
 
     public getAllPosts = async (pagination: Pagination, filter_by_id: boolean,optional_user: string) => {
         let posts = await this.twitRepository.getAllPosts(pagination, filter_by_id, optional_user)
-        return await this.getUsersFromPosts(posts);
+        let ammount_posts = await this.twitRepository.getAmmountPosts(filter_by_id,optional_user);
+        return {total_posts: Number(ammount_posts), posts: await this.getUsersFromPosts(posts)};
     }
 
     public blockPost = async (post_id: string) => {

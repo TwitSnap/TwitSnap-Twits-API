@@ -10,4 +10,6 @@ export interface TwitAdminRepository {
 
     getPost: (post_id: string) => Promise<OverViewPostAdmin[]>;
 
+    getAmmountPosts: (filter_by_id:boolean,optional_user: string) => Promise<Number>;
+
 }
