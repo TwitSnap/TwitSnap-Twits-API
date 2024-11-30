@@ -49,3 +49,7 @@ export const patchTwit = async(message: string, tags: string[], executed_by:stri
 export const accoutRecomendation = async(executed_by:string) => { 
     return await request(app).get("/v1/twit/user/recommendation").set({user_id:executed_by}).query({offset:0, limit:10}).send();
 }
+
+export const getTrendingTopics = async (executed_by:string) => {
+    return await request(app).get("/v1/twit/trending").set({user_id:executed_by}).query({offset:0, limit:10}).send();
+}
