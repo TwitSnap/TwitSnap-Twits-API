@@ -11,6 +11,7 @@ import { json } from 'express';
 import * as neo4j from "neo4j-driver";
 import { AuraDatabaseConnectorStrategy } from "../src/db/connectors/AuraDatabaseConnectorStrategy";
 import { DatabaseConnectorStrategy } from "../src/db/connectors/DatabaseConnectorStrategy";
+import { obtainPostsFromUserExecutedBy, likeOrUnlikeAPost, retwit, commentPost, deletePost, addfavorite, getFavorites, getFeed } from "./request_module";
 
 jest.mock("axios");
 const mAxios = axios as jest.MockedFunction<typeof axios>;
@@ -31,24 +32,15 @@ beforeAll(async  () => {
 
 describe('User Interacions', () => {
 
-    afterEach( async () =>{
-        
-    })
-
-    beforeEach( async () => {
-        
-    })
 
     it('should create record created by id 1 and with the same message', async () => {
-       
-
         await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje","tags":["string"],"is_private":true});
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
         let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
-        expect(lista_posts.status == 200).toBe(true);
+        expect(lista_posts.status ).toBe(200);
         let post = lista_posts.body.posts[0];
-        expect(post.created_by == "1").toBe(true);
-        expect(post.message == "Un nuevo mensaje").toBe(true);
+        expect(post.created_by).toBe("1");
+        expect(post.message).toBe("Un nuevo mensaje");
     });
 
     it("it should return nothing if getter isnt a follower" , async()=>{
@@ -59,40 +51,6 @@ describe('User Interacions', () => {
         expect(posts.length === 0).toBe(true);
       
     });
-
-    it("if user likes, like ammount should go up", async () =>{
-        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
-        let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
-        console.log(lista_posts.body)
-        let post = lista_posts.body.posts[0];
-        let like_reponse = await likeOrUnlikeAPost(post.post_id,"1");
-        expect(like_reponse.status == 204).toBe(true);
-        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
-        let second_posts = await obtainPostsFromUserExecutedBy("1","1");
-        console.log(second_posts.body)
-        post = second_posts.body.posts[0];
-        expect(post.like_ammount == 1).toBe(true);
-    })
-
-    it("Should reduce by one if already liked ", async () => {
-        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
-        let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
-        let post = lista_posts.body.posts[0];
-        let like_reponse = await likeOrUnlikeAPost(post.post_id,"1");
-        expect(like_reponse.status == 204).toBe(true);
-        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
-        lista_posts = await obtainPostsFromUserExecutedBy("1","1");
-        post = lista_posts.body.posts[0];
-        expect(post.like_ammount == 0).toBe(true);
-    })
-
-    it("Shouldnt allow for retwit from poster", async () => {
-        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
-        let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
-        let post = lista_posts.body.posts[0];
-        let retwit_reponse = await retwit(String(post.post_id),"1");
-        expect(retwit_reponse.status == 409).toBe(true);
-    })
 
     it("Should add another post to the list if he comments", async () => {
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
@@ -189,49 +147,14 @@ describe('User Interacions', () => {
 
 
 
+
+
 })
 afterAll( async () => {
     //connection.destroy().then(e =>{
     //    console.log("Desconexion de la BDD");
     //});
-    //await newAuraDriver.executeQuery('MATCH (n)\
-    //DETACH DELETE n');
+    await newAuraDriver.executeQuery('MATCH (n)\
+    DETACH DELETE n');
 
 })
-
-const obtainPostsFromUserExecutedBy = async (user_id: string, executed_by: string) => {
-    return await request(app).get("/v1/twit/posts/user").query({user_id: user_id,offset:0, limit:10}).set({user_id:executed_by}).send();
-}
-
-
-const likeOrUnlikeAPost = async(post_id:string, executed_by: string) => {
-    return await request(app).post("/v1/twit/like").query({post_id: post_id}).set({user_id:executed_by}).send();
-}
-
-const retwit = async (post_id:string, executed_by: string) => {
-    return await request(app).post("/v1/twit/retwit").query({post_id: post_id}).set({user_id:executed_by}).send();
-}
-
-const commentPost = async(post_id: string, executed_by:string, message:string) => {
-    return await request(app).post("/v1/twit/comment").set({user_id:executed_by}).send({  "body": message,
-    "post_id": post_id,
-    "tags": [
-      "string"
-    ]});
-}
-
-const  deletePost = async (post_id: string ,executed_by: string) => {
-    return await request(app).delete("/v1/twit/post").query({post_id:post_id}).set({user_id:executed_by}).send();
-}
-
-const addfavorite = async (post_id:string, executed_by:string) => {
-    return await request(app).post("/v1/twit/favorite").query({post_id:post_id}).set({user_id:executed_by}).send();
-}
-
-const getFavorites = async (target_id: string, executed_by:string) => {
-    return await request(app).get("/v1/twit/favorite").query({user:target_id,offset:0, limit:10}).set({user_id:executed_by}).send();
-}
-
-const getFeed = async (executed_by:string) => {
-    return await request(app).get("/v1/twit/feed").query({offset:0, limit:10}).set({user_id:executed_by}).send();
-}

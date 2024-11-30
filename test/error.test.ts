@@ -11,6 +11,7 @@ import { json } from 'express';
 import * as neo4j from "neo4j-driver";
 import { AuraDatabaseConnectorStrategy } from "../src/db/connectors/AuraDatabaseConnectorStrategy";
 import { DatabaseConnectorStrategy } from "../src/db/connectors/DatabaseConnectorStrategy";
+import { obatinPostFromId } from "./request_module";
 
 jest.mock("axios");
 const mAxios = axios as jest.MockedFunction<typeof axios>;
@@ -45,32 +46,3 @@ describe('Errors', () => {
 
 })
 
-
-const obatinPostFromId = async(post_id: string, executed_by: string) => {
-    return await request(app).get("/v1/twit/post").query({id:post_id}).set({user_id:executed_by}).send();
-}
-
-const obtainPostsFromUserExecutedBy = async (user_id: string, executed_by: string) => {
-    return await request(app).get("/v1/twit/posts/user").query({user_id: user_id,offset:0, limit:10}).set({user_id:executed_by}).send();
-}
-
-
-const likeOrUnlikeAPost = async(post_id:string, executed_by: string) => {
-    return await request(app).post("/v1/twit/like").query({post_id: post_id}).set({user_id:executed_by}).send();
-}
-
-const retwit = async (post_id:string, executed_by: string) => {
-    return await request(app).post("/v1/twit/retwit").query({post_id: post_id}).set({user_id:executed_by}).send();
-}
-
-const commentPost = async(post_id: string, executed_by:string, message:string) => {
-    return await request(app).post("/v1/twit/comment").set({user_id:executed_by}).send({  "body": message,
-    "post_id": post_id,
-    "tags": [
-      "string"
-    ]});
-}
-
-const  deletePost = async (post_id: string ,executed_by: string) => {
-    return await request(app).delete("/v1/twit/post").query({post_id:post_id}).set({user_id:executed_by}).send();
-}

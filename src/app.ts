@@ -14,7 +14,7 @@ import { container, inject, injectable } from "tsyringe";
 import * as neo4j from "neo4j-driver";
 
 const app = express();
-
+let server;
 app.use(cors());
 app.use(express.json());
 app.use(router)
@@ -24,7 +24,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const databaseConnector: AuraDatabaseConnectorStrategy = container.resolve("DatabaseConnectorStrategy");
 databaseConnector.initializeConnection().then(() => {
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
         logger.logInfo(`Server is running on port ${PORT}`);
     });
 }).catch(() => {

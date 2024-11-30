@@ -253,6 +253,15 @@ export class TwitController extends Controller{
         }
     }
 
+    public trendingTopics = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = this.obtainIdFromToken(req);
+        }
+        catch(e){
+            next(e)
+        }
+    }
+
     private obtainIdFromToken = async (req:Request) => {
         const userId = req.headers.user_id as string;
         
