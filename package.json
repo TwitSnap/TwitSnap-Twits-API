@@ -43,6 +43,6 @@
     "dev": "nodemon -L -e ts --exec \"npm run swagger && npm run build &&  npm start\"",
     "build": "tsc",
     "swagger": "node src/utils/swagger/swagger.js",
-    "test": "jest --runInBand --forceExit --coverage"
+    "test": "set PORT=0&&jest --forceExit --coverage "
   }
 }

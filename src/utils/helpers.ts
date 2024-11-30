@@ -3,7 +3,6 @@ import { MissingEnvVarError } from "../services/application/errors/MissingEnvVar
 import {InvalidCredentialsError} from "../services/application/errors/InvalidCredentialsError";
 import {BadRequestError} from "../api/errors/BadRequestError";
 import {StandardDatabaseError} from "../db/errors/StandardDatabaseError"
-import {InvalidRegisterCredentialsError} from "../services/application/errors/InvalidRegisterCredentialsError";
 import {ExternalServiceConnectionError} from "../services/application/errors/ExternalServiceConnectionError";
 import {InvalidExternalServiceResponseError} from "../services/application/errors/InvalidExternalServiceResponseError";
 import {ExternalServiceInternalError} from "../services/application/errors/ExternalServiceInternalError";
@@ -75,7 +74,6 @@ export class Helpers {
         Helpers._errorStatusCodeMap.set(MissingEnvVarError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(StandardDatabaseError, StatusCodes.INTERNAL_SERVER_ERROR);
         Helpers._errorStatusCodeMap.set(InvalidCredentialsError, StatusCodes.UNAUTHORIZED);
-        Helpers._errorStatusCodeMap.set(InvalidRegisterCredentialsError, StatusCodes.CONFLICT);
         Helpers._errorStatusCodeMap.set(BadRequestError, StatusCodes.BAD_REQUEST);
         Helpers._errorStatusCodeMap.set(MessageTooLongError, StatusCodes.BAD_REQUEST);
         Helpers._errorStatusCodeMap.set(InvalidTwitError, StatusCodes.CONFLICT);

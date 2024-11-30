@@ -72,7 +72,6 @@ export class TwitService {
         logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
         console.log(lista_following);
         let lista_baneados: string[] = await this.getBannedUsers();
-        console.log(lista_baneados);
         let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,lista_following, lista_baneados);
         let posts = overview?.posts
         await this.getUsersFromPosts(posts);
@@ -331,6 +330,9 @@ export class TwitService {
         })
         if (request){
             let array : any[] = request.data.users;
+            if (!array){
+                return []
+            }
             let lista_baneados: string[] = array.map( user => {
                 return user.uid;
             })
