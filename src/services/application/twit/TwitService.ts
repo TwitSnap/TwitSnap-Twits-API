@@ -1,10 +1,10 @@
+import { Pagination } from './../../domain/Pagination';
 import { UserNamePhoto } from '../../domain/UserNamePhoto';
 import { logger, twitController } from '../../../utils/container/container';
 import { editTwit, Twit } from '../../domain/Twit';
 import { inject, injectable } from "tsyringe";
 import { TwitRepository } from "../../../db/repositories/interfaces/TwitRepository";
 import { CommentQuery } from '../../domain/Comment';
-import { Pagination } from '../../domain/Pagination';
 import { OverViewPost, OverViewPosts } from '../../domain/Post';
 import axios, { AxiosResponse, HttpStatusCode } from 'axios';
 import { ExternalServiceInternalError } from '../errors/ExternalServiceInternalError';
@@ -164,6 +164,12 @@ export class TwitService {
         }
         return;
     }
+
+    public trendingTopics = async(user_id:string, pagination: Pagination) => {
+        let lista_baneados = await this.getBannedUsers();
+        const activity = await this.twitRepository.getTrendingTopics(user_id, lista_baneados);
+        return activity;
+    }
        /**
      * Handles errors related to the external HTTP request.
      * @param {any} e - The error object from the failed request.
@@ -246,7 +252,7 @@ export class TwitService {
             }
 
             return file;
-          }));
+        }));
         return usuarios;
     }
 

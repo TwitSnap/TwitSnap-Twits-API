@@ -642,6 +642,77 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 return sorted;
         }
 
+        public getTrendingTopics = async (user_id: string, lista_baneados: string[]) : Promise<[string,Number][]> => {
+            const posts = await this.auraRepository.executeQuery('\
+            MATCH (p:Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:false})\
+            WHERE NOT p.created_by  IN $banned_users\
+            UNWIND p.tags AS tag\
+            RETURN tag, COUNT(tag) AS count\
+            ORDER BY count DESC\
+            ', {banned_users:lista_baneados})
+            let activity = new Map<string, Number>();
+            for (let record of posts.records){
+                let actividad_de_usuario = activity.get(record.get("tag"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("tag"),Number(actividad_de_usuario) + Number(record.get("count")));
+                }
+                else{
+                    activity.set(record.get("tag"),Number(record.get("count")));
+                }
+            }
+            const retweets = await this.auraRepository.executeQuery('\
+            MATCH (p:Post {is_retweet:true, is_blocked:false, deleted:false,is_comment:false})\
+                WHERE NOT p.created_by  IN $banned_users\
+            WITH p\
+            MATCH (original: Post)-[:RETWEETED_BY]-> (p)\
+            OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (original)\
+            WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
+            WITH p, \
+                original, \
+                CASE \
+                    WHEN firstPost IS NOT NULL THEN firstPost \
+                    ELSE original \
+                    END AS targetPost\
+            UNWIND targetPost.tags as tags \
+            RETURN tags, COUNT(tags) AS tag_count\
+            ',{banned_users:lista_baneados});
+            for (let record of retweets.records){
+                let actividad_de_usuario = activity.get(record.get("tags"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("tags"),Number(actividad_de_usuario) + Number(record.get("tag_count")));
+                }
+                else{
+                    activity.set(record.get("tags"),Number(record.get("tag_count")));
+                }
+            }
+
+            const comments = await this.auraRepository.executeQuery('\
+            MATCH (p: Post {is_retweet:false, is_blocked:false, deleted:false,is_comment:true})\
+                WHERE NOT p.created_by  IN $banned_users\
+            OPTIONAL MATCH (firstPost:Post) -[:COMMENTED_BY*]->  (p)\
+            WHERE NOT (firstPost)<-[:COMMENTED_BY]-()\
+            WITH p, \
+            CASE \
+              WHEN firstPost IS NOT NULL THEN firstPost \
+              ELSE p \
+            END AS targetPost\
+            UNWIND targetPost.tags as tags\
+            RETURN tags, COUNT(tags) as tag_count\
+            ', { banned_users:lista_baneados, user_id})
+            for (let record of comments.records){
+                let actividad_de_usuario = activity.get(record.get("tags"));
+                if (actividad_de_usuario){
+                    activity.set(record.get("tags"),Number(actividad_de_usuario) + Number(record.get("tag_count")));
+                }
+                else{
+                    activity.set(record.get("tags"),Number(record.get("tag_count")));
+                }
+            }
+            let sorted = Array.from(activity.entries()) // Convert Map to an array of entries
+            .sort((a, b) => Number(b[1]) - Number(a[1]) )  // Sort by the value (ascending order)
+            return sorted;
+        }
+
         private formatPosts = async (result: EagerResult) => {
             const records = result.records;
             let posts = []

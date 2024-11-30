@@ -45,4 +45,6 @@ export interface TwitRepository {
     getFavoritesFrom: (target_id: string, pagination: Pagination, user_id:string, following: Array<string>, banned_ids: string[]) => Promise<OverViewPost[]>;
 
     getAccountsFor: (user_interests:string[], banned_ids: string[], user_id:string) => Promise<string[]>;
+
+    getTrendingTopics: (user_id: string, lista_baneados: string[]) => Promise<[string,Number][]>
 }

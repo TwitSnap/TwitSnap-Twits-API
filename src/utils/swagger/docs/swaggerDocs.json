@@ -331,7 +331,7 @@
       "/v1/twit/user/recommendation":{
         "get": {
           "summary": "Obtener recomendaciones de cuentas",
-          "description": "Use this endpoint to authenticate user.",
+          "description": "Obtener recomendacion de cuentas.",
           "parameters": [
             {
               "name": "offset",
@@ -351,6 +351,32 @@
           "responses":{
             "200":{
               "description": "User Posts encontrados"
+            }
+          }}
+      },
+      "/v1/twit/trending":{
+        "get": {
+          "summary": "Obtener los topicos trending",
+          "description": "Obtener los trending topics.",
+          "parameters": [
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "Topicos encontrados"
             }
           }}
       },
