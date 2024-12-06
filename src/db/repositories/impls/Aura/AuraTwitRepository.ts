@@ -148,8 +148,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             
         };
 
-        comment_post = async (comment: CommentQuery): Promise<EagerResult> =>{
-            return await this.auraRepository.executeQuery(
+        comment_post = async (comment: CommentQuery): Promise<OverViewPost[]> =>{
+            let comm = await this.auraRepository.executeQuery(
                 'MATCH (p:Post {id:$post_id})\
                 WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
                 MATCH (targetPost: Post {id:ID})\
@@ -167,6 +167,23 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 })\
                 WITH c, targetPost\
                 CREATE (targetPost)-[:COMMENTED_BY]->(c)\
+                RETURN c.id AS post_id,\
+                    c.message AS message,\
+                    c.created_by AS created_by,\
+                    c.tags AS tags,\
+                    c.created_at AS created_at,\
+                    c.is_comment AS is_comment,\
+                    c.is_retweet AS is_retweet,\
+                    c.origin_post AS origin_post,\
+                    0 AS ammount_comments,\
+                    0 AS ammount_retwits,\
+                    0 AS ammount_likes,\
+                    c.is_private as is_private,\
+                    false as userLikedPost,\
+                    false as FavedPost,\
+                    c.deleted as deleted,\
+                    false as userRetweeted,\
+                    c.is_blocked as is_blocked\
                 ',
                 {token:comment.getToken(),
                 message:comment.getMessage(),
@@ -180,6 +197,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 is_blocked: false
                 }
             )
+            return this.formatPosts(comm);
         }
     
         getAllByUserId = async (id:string, pagination:Pagination, is_prohibited:boolean, user_id:string, following: Array<string>, banned_ids: string[]): Promise< OverViewPosts> =>{

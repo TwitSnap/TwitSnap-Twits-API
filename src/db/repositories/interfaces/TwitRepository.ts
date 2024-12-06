@@ -22,7 +22,7 @@ export interface TwitRepository {
      */
     save: (user: Twit) => Promise<OverViewPost[]>;
 
-    comment_post: (comment:CommentQuery) => Promise<EagerResult>
+    comment_post: (comment:CommentQuery) => Promise<OverViewPost[]>
 
     getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string, follwing: Array<string>, banned_ids: string[]) => Promise<OverViewPosts>;
 

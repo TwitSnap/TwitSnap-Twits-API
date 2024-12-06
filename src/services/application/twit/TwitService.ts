@@ -35,12 +35,23 @@ export class TwitService {
             throw new MessageTooLongError("El post tiene un mensaje muy largo");
         }
         let post =  (await this.twitRepository.save(twit))[0];
-        let usernames = this.utils.extractMentions(post.message);
+        let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",twit.getToken());
+        if (!original_poster){
+            return post
+        }
+
+        await this.utils.sendMentionNotifications(post.message,original_poster.data.username);
         return post;
     }
 
     public comment = async (comment: CommentQuery) => {
-        return await this.twitRepository.comment_post(comment);
+        let comm = await this.twitRepository.comment_post(comment);
+        let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",comment.getToken());
+        if (! original_poster){
+            return comm
+        }
+        await this.utils.sendMentionNotifications(comm[0].message,original_poster.data.username)
+        return comm;
     }
 
     public getPost = async(id: string, user_id: string) => {

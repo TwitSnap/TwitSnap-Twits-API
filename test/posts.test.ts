@@ -36,13 +36,14 @@ describe('Post tests', () => {
 
 
     it('should create record created by id 1 and with the same message', async () => {
-        await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje","tags":["string"],"is_private":true});
+        mAxios.get.mockResolvedValueOnce({data:{users:[{username:"hola",device_tokens:["asd","hola"]},{username:"chau",device_tokens:["untoken","otrotoken"]}]}})
+        await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje @hola @chau","tags":["string"],"is_private":true});
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
         let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
         expect(lista_posts.status).toBe(200);
         let post = lista_posts.body.posts[0];
         expect(post.created_by).toBe("1");
-        expect(post.message).toBe("Un nuevo mensaje");
+        expect(post.message).toBe("Un nuevo mensaje @hola @chau");
     });
 
     it("it should return nothing if getter isnt a follower" , async()=>{
@@ -62,7 +63,7 @@ describe('Post tests', () => {
         mAxios.get.mockResolvedValueOnce({data:[]});
         let get_post = await obatinPostFromId(String(post.post_id,),"1");
         post = get_post.body;
-        expect(post.message).toBe("Un nuevo mensaje")
+        expect(post.message).toBe("Un nuevo mensaje @hola @chau")
         expect(post.tags[0]).toBe("string")
         expect(post.is_retweet).toBe(false);
     })

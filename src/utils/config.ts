@@ -37,7 +37,9 @@ export const CLIENT_ID = process.env.CLIENT_ID;
 export const CLIENT_SECRET = process.env.CLIENT_SECRET;
 export const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
+
 // ? Other microservices info
 export const USERS_MS_URI = process.env.USERS_MS_URI as string;
 export const GET_USER_ID_FROM_USER_EMAIL_ENDPOINT_PATH = process.env.GET_USER_ID_FROM_USER_EMAIL_ENDPOINT_PATH as string;
 export const AUTH_MS_URI = process.env.AUTH_MS_URI as string;
+export const NOTIF_MS_URI = process.env.NOTIF_MS_URI as string;

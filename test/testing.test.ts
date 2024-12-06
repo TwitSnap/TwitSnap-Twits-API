@@ -57,9 +57,10 @@ describe('User Interacions', () => {
         let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
         let post = lista_posts.body.posts[0];
         let mensaje = "Un mensaje copado";
+        mAxios.get.mockResolvedValueOnce({data:{users:[{username:"hola",device_tokens:["asd","hola"]},{username:"chau",device_tokens:["untoken","otrotoken"]}]}})
         let comment_reponse = await commentPost(post.post_id,"1",mensaje);
         
-        expect(comment_reponse.status == 204).toBe(true);
+        expect(comment_reponse.status).toBe(204);
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]})
         .mockResolvedValueOnce({data:[]});
         lista_posts = await obtainPostsFromUserExecutedBy("1","1");    

@@ -86,8 +86,8 @@ export class TwitController extends Controller{
             const c_tags = this.getFieldOrBadRequestError<string[]>(req,"tags");
             //const body = new CommentQuery(req.body.body,req.body.post_id,user_id)
             const body = new CommentQuery(c_body,c_post_id,user_id,c_tags);
-            const {records,summary} = await this.twitService.comment(body);
-            console.log(summary)
+            const com = await this.twitService.comment(body);
+            console.log(com)
             this.okNoContentResponse(res)
             return
         }catch(e){

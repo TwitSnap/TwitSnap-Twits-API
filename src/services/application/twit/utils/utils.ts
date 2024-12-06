@@ -1,5 +1,5 @@
 import axios, { HttpStatusCode } from "axios";
-import { USERS_MS_URI } from "../../../../utils/config";
+import { NOTIF_MS_URI, USERS_MS_URI } from "../../../../utils/config";
 import { logger } from "../../../../utils/container/container";
 import { OverViewPost } from "../../../domain/Post";
 import { UserNamePhoto } from "../../../domain/UserNamePhoto";
@@ -183,6 +183,60 @@ export class Utils {
                 return lista_baneados
             }
             return []
+        }
+
+        public getNonBannedUsers = async () => {
+            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {params: {is_banned:false,offset:0,limit:1000}}).catch( e => {
+                logger.logDebugFromEntity(`Attempt HTTP request
+                ID: ${new Date().toISOString()}
+                URL: ${"http://api.geonames.org/countryInfoJSON"}
+                Status: ${e.response?.status}
+                Result: FAILED`
+            , this.constructor);
+            this.handleRequestError(e)
+            })
+            if (request){
+                let array : any[] = request.data.users;
+                if (!array){
+                    return []
+                }
+                return array
+            }
+            return []
+        }
+
+        public sendMentionNotifications = async (message:string, executor:string) => {
+            let usernames = this.extractMentions(message);
+            if (usernames.length == 0){
+                return;
+            }
+            let users = await this.getNonBannedUsers();
+            console.log(users);
+            let token_users = users.filter( (user) => {
+                return usernames.includes(user.username)
+            })
+            let tokens = token_users.map(user => {
+                return user.device_tokens
+            }).flat();
+            let body = "Hola! El usuario ${executor} te menciono en un twit!";
+            console.log(body);
+                await axios({
+                    method: 'post',
+                    url: NOTIF_MS_URI+"/v1/eventNotification",
+                    data: 
+                        {
+                            "type": "push",
+                            "params": {
+                                "title": "Fuiste mencionado en un twit",
+                                "body": body
+                            },
+                            "notifications": {
+                                "type": "push",
+                                "destinations": tokens
+                            }
+                        }
+                  });
+                return
         }
 
         public extractMentions = (input: string): string[] => {
