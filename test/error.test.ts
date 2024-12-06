@@ -11,7 +11,7 @@ import { json } from 'express';
 import * as neo4j from "neo4j-driver";
 import { AuraDatabaseConnectorStrategy } from "../src/db/connectors/AuraDatabaseConnectorStrategy";
 import { DatabaseConnectorStrategy } from "../src/db/connectors/DatabaseConnectorStrategy";
-import { obatinPostFromId } from "./request_module";
+import { obatinPostFromId, obtainPostsFromUserExecutedBy } from "./request_module";
 
 jest.mock("axios");
 const mAxios = axios as jest.MockedFunction<typeof axios>;
@@ -40,6 +40,13 @@ describe('Errors', () => {
     it ("should return bad reqeust if string is too long", async () => {
         let response = await request(app).post("/v1/twit").set({user_id:"1"}).send({body:'x'.repeat(500),"tags":["string"],"is_private":true});
         expect(response.status ).toBe(400);
+    })
+
+    it ("should return 500 if error in external service" , async () => {
+        await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje","tags":["string"],"is_private":true});
+        mAxios.get.mockRejectedValue({status:404});
+        let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
+        expect(lista_posts.status).toBe(500);
     })
 
    

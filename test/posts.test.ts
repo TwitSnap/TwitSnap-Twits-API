@@ -1,3 +1,4 @@
+import { OverViewPost } from './../src/services/domain/Post';
 import { editTwit } from './../src/services/domain/Twit';
 import "reflect-metadata";
 import { container } from 'tsyringe';
@@ -57,7 +58,7 @@ describe('Post tests', () => {
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
         let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
         expect(lista_posts.status).toBe(200);
-        let post = lista_posts.body.posts[0];
+        let post:OverViewPost = lista_posts.body.posts[0];
         mAxios.get.mockResolvedValueOnce({data:[]});
         let get_post = await obatinPostFromId(String(post.post_id,),"1");
         post = get_post.body;

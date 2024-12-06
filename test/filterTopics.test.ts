@@ -31,7 +31,7 @@ beforeAll(async  () => {
 
 })
 
-describe('Like a twit', () => {
+describe('Trending topics filter', () => {
 
 
 

@@ -36,9 +36,9 @@ export class TwitController extends Controller{
             }
             const body = new Twit(t_body,t_tags,user_id,is_private);
             
-            const {records,summary} =  await this.twitService.post(body);
+            const post =  await this.twitService.post(body);
             logger.logInfo("Posted Twit from user: " + user_id)
-            console.log(summary);
+            console.log(post);
             this.okNoContentResponse(res);
             return;
         }

@@ -101,8 +101,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         /**
          * @inheritDoc
          */
-        save = async (twit: Twit): Promise<EagerResult> => {
-            return await this.auraRepository.executeQuery(
+        save = async (twit: Twit): Promise<OverViewPost[]> => {
+            let post = await this.auraRepository.executeQuery(
                 'CREATE (p:Post {id:randomUUID(),\
                                 created_by:$token,\
                                 tags:$tags,\
@@ -114,7 +114,25 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 is_private: $is_private,\
                                 deleted: $deleted,\
                                 is_blocked: $is_blocked\
-                })',
+                })\
+                RETURN p.id AS post_id,\
+                    p.message AS message,\
+                    p.created_by AS created_by,\
+                    p.tags AS tags,\
+                    p.created_at AS created_at,\
+                    p.is_comment AS is_comment,\
+                    p.is_retweet AS is_retweet,\
+                    p.origin_post AS origin_post,\
+                    0 AS ammount_comments,\
+                    0 AS ammount_retwits,\
+                    0 AS ammount_likes,\
+                    p.is_private as is_private,\
+                    false as userLikedPost,\
+                    false as FavedPost,\
+                    p.deleted as deleted,\
+                    false as userRetweeted,\
+                    p.is_blocked as is_blocked\
+                ',
                 {token:twit.getToken(),
                     message:twit.getMessage(),
                     tags:twit.getTags(),
@@ -124,9 +142,10 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     is_private: twit.getIsPrivate(),
                     deleted:false,
                     is_blocked: false
-                }
+                })
+            return this.formatPosts(post)
 
-            )
+            
         };
 
         comment_post = async (comment: CommentQuery): Promise<EagerResult> =>{

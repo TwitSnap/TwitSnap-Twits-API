@@ -20,7 +20,7 @@ export interface TwitRepository {
      * @param user - The `User` entity to be saved.
      * @returns A promise that resolves to the saved `User` entity.
      */
-    save: (user: Twit) => Promise<EagerResult>;
+    save: (user: Twit) => Promise<OverViewPost[]>;
 
     comment_post: (comment:CommentQuery) => Promise<EagerResult>
 

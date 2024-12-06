@@ -1,3 +1,4 @@
+import { OverViewPostAdmin } from './../src/services/domain/PostAdmin';
 import "reflect-metadata";
 import { container } from 'tsyringe';
 import { JWT_SECRET } from './../src/utils/config';
@@ -11,7 +12,7 @@ import { json } from 'express';
 import * as neo4j from "neo4j-driver";
 import { AuraDatabaseConnectorStrategy } from "../src/db/connectors/AuraDatabaseConnectorStrategy";
 import { DatabaseConnectorStrategy } from "../src/db/connectors/DatabaseConnectorStrategy";
-import { blockPost, getFeed, obatinPostFromId, obtainAdminPosts, obtainPostsFromUserExecutedBy } from "./request_module";
+import { blockPost, getFeed, getPostAdmin, obatinPostFromId, obtainAdminPosts, obtainPostsFromUserExecutedBy } from "./request_module";
 
 jest.mock("axios");
 const mAxios = axios as jest.MockedFunction<typeof axios>;
@@ -29,7 +30,7 @@ beforeAll(async  () => {
 })
 
 
-describe('Errors', () => {
+describe('Administrator checks', () => {
 
     it('should create record created by id 1 and with the same message', async () => {
         await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje","tags":["string"],"is_private":true});
@@ -39,6 +40,24 @@ describe('Errors', () => {
         let post = lista_posts.body.posts[0];
         expect(post.created_by).toBe("1");
         expect(post.message).toBe("Un nuevo mensaje");
+    });
+    
+    it('Admin correctly getting the post', async () => {
+        mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
+        let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
+        expect(lista_posts.status ).toBe(200);
+        let post = lista_posts.body.posts[0];
+
+        expect(post.created_by).toBe("1");
+        expect(post.message).toBe("Un nuevo mensaje");
+
+        let admin_response = await getPostAdmin(post.post_id);
+        expect(admin_response.status).toBe(200);
+        let adm_post: OverViewPostAdmin = admin_response.body[0]
+        expect(adm_post.post_id).toBe(post.post_id)
+        expect(adm_post.is_blocked).toBe(false)
+        expect(adm_post.comment_ammount).toBe(0)
+
     });
 
     it ('Should correctly block that post', async () => {
@@ -94,7 +113,7 @@ describe('Errors', () => {
         expect(post.message).toBe("Un nuevo mensaje");
     })
 
-    it ("shouldnt appear in the feed of user 2", async ()=>{
+    it ("should reappear in the feed of user 2 the blocked twit", async ()=>{
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:"1"}]}}).
         mockResolvedValueOnce({data:{users:[{uid:10}]}}).
         mockResolvedValueOnce({data:[]});

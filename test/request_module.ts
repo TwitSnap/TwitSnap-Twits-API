@@ -65,3 +65,7 @@ export const obtainAdminPosts = async () => {
 export const getPostFilteredByTag = async (executed_by:string,filter:string)=>{
     return await request(app).get("/v1/twit/filter/posts").set({user_id:executed_by}).query({tag:filter,offset:0, limit:10}).send();
 }
+
+export const getPostAdmin = async (post_id:string) => {
+    return await request(app).get("/v1/twit/admin/post").query({post_id: post_id}).send();
+}

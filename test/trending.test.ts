@@ -31,7 +31,7 @@ beforeAll(async  () => {
 
 })
 
-describe('Post tests', () => {
+describe('Trending topics test', () => {
 
 
     it('should create record created by id 1 and with the same message', async () => {
