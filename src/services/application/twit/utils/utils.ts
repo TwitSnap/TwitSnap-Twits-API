@@ -218,7 +218,7 @@ export class Utils {
             let tokens = token_users.map(user => {
                 return user.device_tokens
             }).flat();
-            let body = "Hola! El usuario ${executor} te menciono en un twit!";
+            let body = `Hola! El usuario ${executor} te menciono en un twit!`;
             console.log(body);
                 await axios({
                     method: 'post',
