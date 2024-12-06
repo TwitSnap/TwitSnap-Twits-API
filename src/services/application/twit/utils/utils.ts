@@ -211,18 +211,22 @@ export class Utils {
                 return;
             }
             let users = await this.getNonBannedUsers();
-            console.log(users);
             let token_users = users.filter( (user) => {
                 return usernames.includes(user.username)
             })
             let tokens = token_users.map(user => {
                 return user.device_tokens
-            }).flat();
+            }).flat().filter(token => {
+                if (token == 'None'){
+                    return false
+                }
+                return true
+            });
             if (tokens.length == 0){
                 return;
             }
             let body = `Hola! El usuario ${executor} te menciono en un twit!`;
-            console.log(body);
+            console.log(tokens);
                 await axios({
                     method: 'post',
                     url: NOTIF_MS_URI+"/v1/eventNotification",

@@ -36,7 +36,6 @@ export class TwitService {
         }
         let post =  (await this.twitRepository.save(twit))[0];
         let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",twit.getToken());
-        console.log(original_poster);
         if (!original_poster){
             return post
         }

@@ -36,7 +36,7 @@ describe('Post tests', () => {
 
 
     it('should create record created by id 1 and with the same message', async () => {
-        mAxios.get.mockResolvedValueOnce({data:{username:"claudio"}}).mockResolvedValueOnce({data:{users:[{username:"hola",device_tokens:["asd","hola"]},{username:"chau",device_tokens:["untoken","otrotoken"]}]}})
+        mAxios.get.mockResolvedValueOnce({data:{username:"claudio"}}).mockResolvedValueOnce({data:{users:[{username:"hola",device_tokens:["asd","hola","None"]},{username:"chau",device_tokens:["untoken","otrotoken"]}]}})
         await request(app).post("/v1/twit").set({user_id:"1"}).send({body:"Un nuevo mensaje @hola @chau","tags":["string"],"is_private":true});
         mAxios.get.mockResolvedValueOnce({data:{following:[{uid:1}]}}).mockResolvedValueOnce({data:{users:[{uid:10}]}}).mockResolvedValueOnce({data:[]});
         let lista_posts = await obtainPostsFromUserExecutedBy("1","1");
