@@ -214,8 +214,10 @@ export class Utils {
             let token_users = users.filter( (user) => {
                 return usernames.includes(user.username)
             })
+            console.log("los usuarios son: ");
             let tokens = token_users.map(user => {
-                return user.device_tokens
+                console.log(user.device_token)
+                return user.device_token
             }).flat().filter(token => {
                 if (token == 'None'){
                     return false
@@ -223,6 +225,7 @@ export class Utils {
                 return true
             });
             if (tokens.length == 0){
+                console.log("El numero de tokens es 0")
                 return;
             }
             let body = `Hola! El usuario ${executor} te menciono en un twit!`;

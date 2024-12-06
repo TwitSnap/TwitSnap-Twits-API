@@ -36,10 +36,11 @@ export class TwitService {
         }
         let post =  (await this.twitRepository.save(twit))[0];
         let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",twit.getToken());
+        
         if (!original_poster){
             return post
         }
-
+        logger.logInfo("El usuaro que posteo es: " + original_poster.data.username);
         await this.utils.sendMentionNotifications(post.message,original_poster.data.username);
         return post;
     }
