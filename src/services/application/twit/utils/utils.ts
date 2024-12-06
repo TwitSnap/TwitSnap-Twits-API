@@ -218,6 +218,9 @@ export class Utils {
             let tokens = token_users.map(user => {
                 return user.device_tokens
             }).flat();
+            if (tokens.length == 0){
+                return;
+            }
             let body = `Hola! El usuario ${executor} te menciono en un twit!`;
             console.log(body);
                 await axios({
@@ -235,6 +238,8 @@ export class Utils {
                                 "destinations": tokens
                             }
                         }
+                  }).catch(e=>{
+                    this.handleRequestError(e);
                   });
                 return
         }
