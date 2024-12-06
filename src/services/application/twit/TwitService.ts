@@ -1,3 +1,4 @@
+import { getPostFilteredByTag } from './../../../../test/request_module';
 import { Pagination } from './../../domain/Pagination';
 import { UserNamePhoto } from '../../domain/UserNamePhoto';
 import { logger, twitController } from '../../../utils/container/container';
@@ -169,6 +170,19 @@ export class TwitService {
         let lista_baneados = await this.getBannedUsers();
         const activity = await this.twitRepository.getTrendingTopics(user_id, lista_baneados);
         return activity;
+    }
+
+    public filteredByTopic = async (user_id: string, tag_filter:string, pagination: Pagination) => {
+        const following: Array<any> = await this.getAllFollowingOf(user_id);
+        const lista_followers = this.getFollowingList(following);
+        console.log(lista_followers);
+        let lista_baneados = await this.getBannedUsers();
+        const feed = await this.twitRepository.getTopicsFilteredByTag(user_id, lista_baneados,pagination, tag_filter,lista_followers);
+        let posts = feed?.posts
+        console.log(posts)
+        logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
+        await this.getUsersFromPosts(posts);
+        return {posts:posts};
     }
        /**
      * Handles errors related to the external HTTP request.

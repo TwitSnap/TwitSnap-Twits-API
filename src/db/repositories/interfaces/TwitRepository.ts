@@ -47,4 +47,6 @@ export interface TwitRepository {
     getAccountsFor: (user_interests:string[], banned_ids: string[], user_id:string) => Promise<string[]>;
 
     getTrendingTopics: (user_id: string, lista_baneados: string[]) => Promise<[string,Number][]>
+
+    getTopicsFilteredByTag: (user_id: string,  banned_ids: string[], pagination: Pagination, filter: string, following: Array<string>) => Promise<OverViewPosts>;
 }

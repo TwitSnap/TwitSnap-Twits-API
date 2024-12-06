@@ -267,6 +267,19 @@ export class TwitController extends Controller{
         }
     }
 
+    public getFilteredPosts = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = await this.obtainIdFromToken(req);
+            logger.logInfo("Tryning to get trending filtered_posts for: " + user_id);
+            const tag_filter = this.getQueryFieldOrBadRequestError<string>(req,"tag");
+            const pagination = this.getPagination(req);
+            let posts = await this.twitService.filteredByTopic(user_id,tag_filter, pagination);
+            return this.okResponse(res,posts);
+        }
+        catch(e){
+            next(e)
+        }
+    }
     private obtainIdFromToken = async (req:Request) => {
         const userId = req.headers.user_id as string;
         

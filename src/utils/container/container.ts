@@ -39,3 +39,4 @@ container.register<DatabaseConnectorStrategy<neo4j.Driver, neo4j.Driver>>("Datab
 export const logger = container.resolve(Logger);
 export const twitController = container.resolve(TwitController);
 export const twitAdminController = container.resolve(TwitAdminController);
+export const databaseConnector = container.resolve(DatabaseConnector<neo4j.Driver, neo4j.Driver>);

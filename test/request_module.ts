@@ -53,3 +53,15 @@ export const accoutRecomendation = async(executed_by:string) => {
 export const getTrendingTopics = async (executed_by:string) => {
     return await request(app).get("/v1/twit/trending").set({user_id:executed_by}).query({offset:0, limit:10}).send();
 }
+
+export const blockPost = async (id: string,executed_by: string) => {
+    return await request(app).post("/v1/twit/admin/block").set({user_id:executed_by}).query({post_id: id}).send();
+}
+
+export const obtainAdminPosts = async () => {
+    return await request(app).get("/v1/twit/admin/posts").query({offset:0,limit:10}).send();
+}
+
+export const getPostFilteredByTag = async (executed_by:string,filter:string)=>{
+    return await request(app).get("/v1/twit/trending/posts").set({user_id:executed_by}).query({tag:filter,offset:0, limit:10}).send();
+}

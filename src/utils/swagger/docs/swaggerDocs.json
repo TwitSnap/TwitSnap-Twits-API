@@ -414,6 +414,40 @@
           }
         }
       },
+      "/v1/twit/trending/posts":{
+        "get": {
+          "summary": "Obtener Los posts de un topic",
+          "description": "Use this endpoint to authenticate user.",
+          "parameters": [
+            {
+              "name": "tag",
+              "in": "query",
+              "description": "El nombre del tag por el cual se quiere filtrar",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "description": "The offset Desired",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "description": "The max ammount of posts",
+              "required": false,
+              "type": "number"
+            }
+          ],
+          "responses":{
+            "200":{
+              "description": "No hay error en la request, se devuelven los posts"
+            }
+          }
+        }
+      },
       "/v1/twit/admin/posts":{
         "get": {
           "summary": "Obtener Todos los posts en el sistema",
