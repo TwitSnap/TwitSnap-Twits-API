@@ -414,7 +414,7 @@
           }
         }
       },
-      "/v1/twit/trending/posts":{
+      "/v1/twit/filter/posts":{
         "get": {
           "summary": "Obtener Los posts de un topic",
           "description": "Use this endpoint to authenticate user.",

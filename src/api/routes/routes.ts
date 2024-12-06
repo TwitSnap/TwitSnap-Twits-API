@@ -20,7 +20,7 @@ router.get("/v1/twit/user/stats",twitController.getStats);
 router.get("/v1/twit/feed",twitController.getFeed);
 router.get("/v1/twit/user/recommendation", twitController.getRecommendedAccounts);
 router.get("/v1/twit/trending", twitController.trendingTopics)
-router.get("/v1/twit/trending/posts", twitController.getFilteredPosts);
+router.get("/v1/twit/filter/posts", twitController.getFilteredPosts);
 
 
 // Admin User Routes
