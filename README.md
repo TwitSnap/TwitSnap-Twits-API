@@ -9,7 +9,7 @@
 
 ## Microservicios de Twits
 
-    Este microservicio se encarga de todo lo relacionado con los twits, las interacciones con ellos (likes,comentarios,snapshares). Utilizando una base de datos de grafos llamada Neo4j.
+Este microservicio se encarga de todo lo relacionado con los twits, las interacciones con ellos (likes,comentarios,snapshares). Utilizando una base de datos de grafos llamada Neo4j.
 
 ## Prerequisitos
 
