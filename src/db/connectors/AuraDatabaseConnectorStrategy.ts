@@ -1,7 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { DataSource } from "typeorm";
 import { DatabaseConnectorStrategy } from "./DatabaseConnectorStrategy";
-import { AppDataSource } from "./dataSource";
 import * as neo4j from "neo4j-driver";
 import { logger } from '../../utils/container/container';
 

@@ -1,16 +1,10 @@
 import "reflect-metadata";
-import { container } from 'tsyringe';
-import { JWT_SECRET } from './../src/utils/config';
 
-import { DataSource, Repository } from 'typeorm';
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll,jest } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 import app from "../src/app"
-import axios, { AxiosRequestConfig } from 'axios';
-import { json } from 'express';
+import axios from 'axios';
 import * as neo4j from "neo4j-driver";
-import { AuraDatabaseConnectorStrategy } from "../src/db/connectors/AuraDatabaseConnectorStrategy";
-import { DatabaseConnectorStrategy } from "../src/db/connectors/DatabaseConnectorStrategy";
 import { obatinPostFromId, obtainPostsFromUserExecutedBy } from "./request_module";
 
 jest.mock("axios");
