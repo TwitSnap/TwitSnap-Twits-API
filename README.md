@@ -5,6 +5,7 @@
   - [Microservicios de Twits](#microservicios-de-twits)
   - [Prerequisitos](#prerequisitos)
     - [**Como instalar y correr**](#como-instalar-y-correr)
+  - [Documentacion](#documentacion)
   - [Tests](#tests)
 
 ## Microservicios de Twits
@@ -37,6 +38,10 @@ Se provee un docker-compose.yml para poder facilitar la ejecucion del ambiente.
     npm run install
     npm run start
 ```
+
+## Documentacion
+
+La documentacion de la api se puede encontrar en /api-docs del servidor [API Docs](https://twitsnap-twits-api.onrender.com/api-docs)
 
 
 ## Tests
