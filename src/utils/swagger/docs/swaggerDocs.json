@@ -1,94 +1,769 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-      "title": "My API",
-      "description": "API documentation",
-      "version": "1.0.0"
+  "openapi": "3.0.0",
+  "info": {
+    "title": "My API",
+    "description": "API documentation",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/twit": {
+      "post": {
+        "summary": "Postear un twit",
+        "description": "Este endpoint se utiliza para postear un twit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "description": "El mensaje que quiere mandar"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "description": "Los tags que se adhieren a este twit",
+                    "items": {
+                      "type": "string",
+                      "description": "Un tag individual"
+                    }
+                  },
+                  "is_private": {
+                    "type": "boolean",
+                    "description": "Si es o no privado un post"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Post Succesful"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     },
-    "paths": {
-      "/v1/twit": {
-        "post": {
-          "summary": "Postear un twit",
-          "description": "Este endpoint se utiliza para postear un twit",
-          "requestBody": {
+    "/v1/twit/post": {
+      "get": {
+        "summary": "Obtener un post",
+        "description": "Get a Post by id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverViewPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "Description": "Post not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar un post",
+        "description": "Editar un post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "description": "The user comment."
+                  },
+                  "post_id": {
+                    "type": "string",
+                    "description": "El id del post que se quiere comentar"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "description": "Los tags que se adhieren a este twit",
+                    "items": {
+                      "type": "string",
+                      "description": "Un tag individual"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Succesfully edited post"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Borrar un post",
+        "description": "Borrar un post por id",
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post was correctly deleted"
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/favorite": {
+      "post": {
+        "summary": "Agregar a Favoritos un post",
+        "description": "Favorites a post, if arleady favorited, remove favorite",
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post favored"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Obtener todos los favoritos de un usuario",
+        "description": "Obtener favoritos de un usuario",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OverViewPost"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/comment": {
+      "post": {
+        "summary": "Posetar un commentario a un post",
+        "description": "Use this endpoint to authenticate user.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "description": "The user comment."
+                  },
+                  "post_id": {
+                    "type": "string",
+                    "description": "El id del post que se quiere comentar"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "description": "Los tags que se adhieren a este twit",
+                    "items": {
+                      "type": "string",
+                      "description": "Un tag individual"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Comment succesful"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/posts/user": {
+      "get": {
+        "summary": "Obtener todos los posts de un usuario",
+        "description": "Use this endpoint to authenticate user.",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "The name of the user",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrados",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "body": {
-                      "type": "string",
-                      "description": "El mensaje que quiere mandar"
-                    },
-                    "tags": {
+                    "posts": {
                       "type": "array",
-                      "description": "Los tags que se adhieren a este twit",
                       "items": {
-                        "type": "string",
-                        "description": "Un tag individual"
+                        "$ref": "#/components/schemas/OverViewPost"
                       }
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/like": {
+      "post": {
+        "summary": "Like a post",
+        "description": "Like a Post",
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post liked"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/retwit": {
+      "post": {
+        "summary": "Retwit a post",
+        "description": "Retwit a post, if post already retwited, unretweet",
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The id of the post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post retwited"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/post/comments": {
+      "get": {
+        "summary": "Obtener todos los comentarios de un post",
+        "description": "Use this endpoint to authenticate user.",
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The name of the user",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OverViewPost"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/user/stats": {
+      "get": {
+        "summary": "Obtener las estadisticas de un usuarion en un cierto periodo",
+        "description": "Use this endpoint to authenticate user.",
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "description": "Periodo",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "likes": {
+                      "type": "integer",
+                      "description": "The total number of likes for the posts"
                     },
-                    "is_private":{
-                      "type": "boolean",
-                      "description": "Si es o no privado un post"
+                    "comments": {
+                      "type": "integer",
+                      "description": "The total number of comments for the posts"
+                    },
+                    "shares": {
+                      "type": "integer",
+                      "description": "The total number of shares for the posts"
+                    }
+                  },
+                  "required": [
+                    "likes",
+                    "comments",
+                    "shares"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twit/user/recommendation": {
+      "get": {
+        "summary": "Obtener recomendaciones de cuentas",
+        "description": "Obtener recomendacion de cuentas.",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recomended Accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "The id of the user"
+                      },
+                      "username": {
+                        "type": "string",
+                        "description": "The username"
+                      },
+                      "photo": {
+                        "type": "string",
+                        "description": "Link to the photo of the user"
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "responses": {
-            "204": {
-              "description": "Post Succesful"
-            },
-            "400": {
-              "description": "Invalid credentials"
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
-
         }
-      },
-      "/v1/twit/post": {
-        "get": {
-          "summary":"Obtener un post",
-          "description":"Get a Post by id",
-          "parameters": [
-            {
-              "name": "id",
-              "in": "query",
-              "description": "The id of the post",
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "responses":{
-            "200": {
-              "description": "Post found"
-            }
-          }},
-          "patch": {
-            "summary": "Editar un post",
-            "description": "Editar un post",
-            "requestBody": {
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "body":{
-                        "type":"string",
-                        "description": "The user comment."
-                      },
-                      "post_id":{
-                        "type":"string",
-                        "description":"El id del post que se quiere comentar"
-                      },
-                      "tags": {
-                        "type": "array",
-                        "description": "Los tags que se adhieren a este twit",
-                        "items": {
-                          "type": "string",
-                          "description": "Un tag individual"
+      }
+    },
+    "/v1/twit/trending": {
+      "get": {
+        "summary": "Obtener los topicos trending",
+        "description": "Obtener los trending topics.",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Topicos encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "properties": {
+                        "topic": {
+                          "type": "string"
+                        },
+                        "ammount": {
+                          "type": "integer"
                         }
                       }
                     }
@@ -97,433 +772,477 @@
               }
             }
           },
-          "delete": {
-            "summary":"Borrar un post",
-            "description":"Borrar un post por id",
-            "parameters": [
-              {
-                "name": "post_id",
-                "in": "query",
-                "description": "The id of the post",
-                "required": false,
-                "type": "string"
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
-            ]
-          }
-
-      },
-      "/v1/twit/favorite": {
-        "post": {
-          "summary":"Agregar a Favoritos un post",
-          "description":"Get a Post by id",
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The id of the post",
-              "required": false,
-              "type": "string"
             }
-          ],
-          "responses":{
-            "200": {
-              "description": "Post found"
-            }
-          }
-        },
-        "get": {
-          "summary":"Obtener todos los favoritos de un usuario",
-          "description":"Obtener favoritos de un usuario",
-          "parameters": [
-            {
-              "name": "user",
-              "in": "query",
-              "description": "The id of the post",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200": {
-              "description": "Post found"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
-      },
-      "/v1/twit/comment":{
-
-        "post":{
-          "summary": "Posetar un commentario a un post",
-          "description": "Use this endpoint to authenticate user.",
-          "requestBody": {
+      }
+    },
+    "/v1/twit/feed": {
+      "get": {
+        "summary": "Obtener el feed de un usuario",
+        "description": "Use this endpoint to authenticate user.",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Optional name for filtering",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrados",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "body":{
-                      "type":"string",
-                      "description": "The user comment."
-                    },
-                    "post_id":{
-                      "type":"string",
-                      "description":"El id del post que se quiere comentar"
-                    },
-                    "tags": {
+                    "posts": {
                       "type": "array",
-                      "description": "Los tags que se adhieren a este twit",
                       "items": {
-                        "type": "string",
-                        "description": "Un tag individual"
+                        "$ref": "#/components/schemas/OverViewPost"
                       }
                     }
-                  }
+                  },
+                  "required": [
+                    "post"
+                  ]
                 }
               }
             }
           },
-          "responses": {
-            "204": {
-              "description": "Comment succesful"
-            },
-            "400": {
-              "description": "Invalid input data"
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
-          }
-      }},
-      "/v1/twit/posts/user":{
-        "get": {
-          "summary": "Obtener todos los posts de un usuario",
-          "description": "Use this endpoint to authenticate user.",
-          "parameters": [
-            {
-              "name": "user_id",
-              "in": "query",
-              "description": "The name of the user",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
-            }
-          }}
-      },
-      "/v1/twit/like":{
-        "post": {
-          "summary":"Like a post",
-          "description":"Like a Post",
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The id of the post",
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "responses":{
-            "204": {
-              "description": "Post found"
-            }
-          }}
-      },
-      "/v1/twit/retwit":{
-        "post": {
-          "summary":"Retwit a post",
-          "description":"Like a Post",
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The id of the post",
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "responses":{
-            "204": {
-              "description": "Post found"
-            }
-          }}
-      },
-      "/v1/twit/post/comments":{
-        "get": {
-          "summary": "Obtener todos los comentarios de un post",
-          "description": "Use this endpoint to authenticate user.",
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The name of the user",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
-            }
-          }}
-      },
-      "/v1/twit/user/stats":{
-        "get": {
-          "summary": "Obtener las estadisticas de un usuarion en un cierto periodo",
-          "description": "Use this endpoint to authenticate user.",
-          "parameters": [
-            {
-              "name": "periodo",
-              "in": "query",
-              "description": "Periodo",
-              "required": false,
-              "type": "string"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
-            }
-          }}
-      },
-      "/v1/twit/user/recommendation":{
-        "get": {
-          "summary": "Obtener recomendaciones de cuentas",
-          "description": "Obtener recomendacion de cuentas.",
-          "parameters": [
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
-            }
-          }}
-      },
-      "/v1/twit/trending":{
-        "get": {
-          "summary": "Obtener los topicos trending",
-          "description": "Obtener los trending topics.",
-          "parameters": [
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "Topicos encontrados"
-            }
-          }}
-      },
-      "/v1/twit/feed":{
-        "get": {
-          "summary": "Obtener el feed de un usuario",
-          "description": "Use this endpoint to authenticate user.",
-          "parameters": [
-            {
-              "name": "user_id",
-              "in": "query",
-              "description": "Optional name for filtering",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
-            }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
-      },
-      "/v1/twit/filter/posts":{
-        "get": {
-          "summary": "Obtener Los posts de un topic",
-          "description": "Use this endpoint to authenticate user.",
-          "parameters": [
-            {
-              "name": "tag",
-              "in": "query",
-              "description": "El nombre del tag por el cual se quiere filtrar",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
+      }
+    },
+    "/v1/twit/filter/posts": {
+      "get": {
+        "summary": "Obtener Los posts de un topic",
+        "description": "Use this endpoint to authenticate user.",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "query",
+            "description": "El nombre del tag por el cual se quiere filtrar",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OverViewPost"
+                      }
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
             }
-          ],
-          "responses":{
-            "200":{
-              "description": "No hay error en la request, se devuelven los posts"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
-      },
-      "/v1/twit/admin/posts":{
-        "get": {
-          "summary": "Obtener Todos los posts en el sistema",
-          "description": "Use this endpoint to obtain all posts from the system.",
-          "tags": ["Admin"],
-          "parameters": [
-            {
-              "name": "user_id",
-              "in": "query",
-              "description": "Not required. Get posts from specific user id",
-              "required": false,
-              "type": "string"
-            },
-            {
-              "name": "offset",
-              "in": "query",
-              "description": "The offset Desired",
-              "required": false,
-              "type": "number"
-            },
-            {
-              "name": "limit",
-              "in": "query",
-              "description": "The max ammount of posts",
-              "required": false,
-              "type": "number"
+      }
+    },
+    "/v1/twit/admin/posts": {
+      "get": {
+        "summary": "Obtener Todos los posts en el sistema",
+        "description": "Use this endpoint to obtain all posts from the system.",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Not required. Get posts from specific user id",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The offset Desired",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The max ammount of posts",
+            "required": false,
+            "type": "number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total_posts": {
+                      "type": "integer",
+                      "description": "The max ammount of posts"
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OverViewPost"
+                      }
+                    }
+                  },
+                  "required": [
+                    "post"
+                  ]
+                }
+              }
             }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
-      },
-      "/v1/twit/admin/block":{
-        "post": {
-          "summary": "Bloquear un post. Si Estaba bloqueado se desbloquea",
-          "description": "Bloquear un post. Si Estaba bloqueado se desbloquea",
-          "tags": ["Admin"],
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The post to be blocked",
-              "required": false,
-              "type": "string"
+      }
+    },
+    "/v1/twit/admin/block": {
+      "post": {
+        "summary": "Bloquear un post. Si Estaba bloqueado se desbloquea",
+        "description": "Bloquear un post. Si Estaba bloqueado se desbloquea",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The post to be blocked",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post bloqueado con exito"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
-      },
-      "/v1/twit/admin/post":{
-        "get": {
-          "summary": "Obtener un post particular",
-          "description": "Obtener un post Particular",
-          "tags": ["Admin"],
-          "parameters": [
-            {
-              "name": "post_id",
-              "in": "query",
-              "description": "The post",
-              "required": false,
-              "type": "string"
+      }
+    },
+    "/v1/twit/admin/post": {
+      "get": {
+        "summary": "Obtener un post particular",
+        "description": "Obtener un post Particular",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "query",
+            "description": "The post",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User Posts encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverViewPost"
+                }
+              }
             }
-          ],
-          "responses":{
-            "200":{
-              "description": "User Posts encontrados"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           }
         }
       }
     }
+  },
+  "components": {
+    "schemas": {
+      "OverViewPost": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "post_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_retweet": {
+            "type": "boolean"
+          },
+          "is_comment": {
+            "type": "boolean"
+          },
+          "origin_post": {
+            "type": "string"
+          },
+          "comment_ammount": {
+            "type": "integer"
+          },
+          "like_ammount": {
+            "type": "integer"
+          },
+          "retweet_ammount": {
+            "type": "integer"
+          },
+          "username_creator": {
+            "type": "string",
+            "nullable": true
+          },
+          "photo_creator": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_private": {
+            "type": "boolean"
+          },
+          "liked": {
+            "type": "boolean"
+          },
+          "favourite": {
+            "type": "boolean"
+          },
+          "retweeted": {
+            "type": "boolean"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "is_blocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message",
+          "tags",
+          "created_by",
+          "post_id",
+          "created_at",
+          "is_retweet",
+          "is_comment",
+          "origin_post",
+          "comment_ammount",
+          "like_ammount",
+          "retweet_ammount",
+          "is_private",
+          "liked",
+          "favourite",
+          "retweeted",
+          "deleted",
+          "is_blocked"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type."
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type."
+          },
+          "status": {
+            "type": "integer",
+            "description": "The HTTP status code for this occurrence of the problem."
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status"
+        ]
+      }
+    }
+  }
 }
