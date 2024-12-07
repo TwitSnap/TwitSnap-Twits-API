@@ -187,7 +187,11 @@ export class TwitService {
     public trendingTopics = async(user_id:string, pagination: Pagination) => {
         let lista_baneados = await this.utils.getBannedUsers();
         const activity = await this.twitRepository.getTrendingTopics(user_id, lista_baneados);
-        let acti = activity.slice(pagination.offset,pagination.offset+pagination.limit);
+        console.log(activity);
+        console.log(pagination.offset);
+        console.log(pagination.limit);
+        let acti = activity.slice(Number(pagination.offset),Number(pagination.offset)+Number(pagination.limit));
+        console.log(acti);
         return acti;
     }
 
