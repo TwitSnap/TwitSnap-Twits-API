@@ -257,8 +257,7 @@ export class TwitController extends Controller{
         try{
             const user_id = await this.obtainIdFromToken(req);
             logger.logInfo("Tryning to get trending topics for: " + user_id);
-            //const pagination = this.getPagination(req)
-            const pagination: Pagination = {offset:0, limit:10};
+            const pagination = this.getPagination(req)
             let topics_activity = await this.twitService.trendingTopics(user_id, pagination);
             return this.okResponse(res,topics_activity);
         }
