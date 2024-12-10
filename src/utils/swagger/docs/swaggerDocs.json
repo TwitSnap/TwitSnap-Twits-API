@@ -875,7 +875,7 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Optional name for filtering",
+            "description": "String/hashtag que se quiere buscar",
             "required": false,
             "type": "string"
           },
