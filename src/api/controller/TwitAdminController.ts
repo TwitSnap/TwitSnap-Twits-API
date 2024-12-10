@@ -9,7 +9,6 @@ import { editTwit, Twit } from '../../services/domain/Twit';
 import { Controller } from "./Controller";
 import { HttpResponseSender } from "./HttpResponseSender";
 import { logger } from '../../utils/container/container';
-import { Pagination } from '../../services/domain/Pagination';
 import { UserIdMissingError } from '../errors/UserIdMissingError';
 import { TwitAdminService } from '../../services/application/twit/TwitAdminService';
 
