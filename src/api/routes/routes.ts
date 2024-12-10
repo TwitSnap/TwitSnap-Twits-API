@@ -29,7 +29,7 @@ router.get("/v1/twit/posts/search", twitController.searchTwits);
 router.get("/v1/twit/admin/post", twitAdminController.getPost);
 router.get("/v1/twit/admin/posts", twitAdminController.getPosts);
 router.post("/v1/twit/admin/block", twitAdminController.blockTwit);
-
+router.get("/v1/twit/admin/healthcheck",twitAdminController.healthCheck);
 
 
 

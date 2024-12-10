@@ -1,3 +1,4 @@
+import { Pagination } from './../../services/domain/Pagination';
 import { BadRequestError } from './../errors/BadRequestError';
 import { NextFunction, Response } from 'express';
 import { Request } from 'express';
@@ -76,6 +77,29 @@ export class TwitAdminController extends Controller{
         }
     }
 
+    public healthCheck =async (req: Request, res: Response, next: NextFunction) =>  {
+        try{
+            logger.logInfo("Se recibe una request para obtener todos los posts");
+            const pagination: Pagination = {
+                offset:0,
+                limit:1,
+            };
+            const optional_user = undefined;
+            let filter_by_id = false;
+            let possible_user = "";
+            if (optional_user){
+                
+                filter_by_id = true;
+                possible_user = String(optional_user);
+            }
+            
+            const posts = await this.twitService.getAllPosts(pagination,filter_by_id,possible_user);
+            return this.okNoContentResponse(res);
+        }
+        catch(e){
+            next(e)
+        }
+    }
     private getPagination = (req: Request) => {
         const offset = this.getQueryFieldOrBadRequestError<number>(req,"offset");
         const limit = this.getQueryFieldOrBadRequestError<number>(req,"limit");
