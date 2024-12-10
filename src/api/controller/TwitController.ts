@@ -279,6 +279,23 @@ export class TwitController extends Controller{
             next(e)
         }
     }
+
+    public searchTwits = async (req: Request, res: Response, next: NextFunction) => {
+        try{
+            const user_id = await this.obtainIdFromToken(req);
+            logger.logInfo("Trying to get twits for:" + user_id);
+            const search = this.getQueryFieldOrBadRequestError<string>(req,"search");
+            logger.logInfo("Trying to get twits for:" + user_id + "with search: " + search);
+            const pagination = this.getPagination(req);
+            let posts = await this.twitService.searchTwits(user_id,search,pagination);
+            return this.okResponse(res,posts);
+        }
+        catch(e){
+            next(e)
+        }
+    }
+
+
     private obtainIdFromToken = async (req:Request) => {
         const userId = req.headers.user_id as string;
         

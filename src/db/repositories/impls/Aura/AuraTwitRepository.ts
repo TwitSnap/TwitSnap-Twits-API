@@ -101,7 +101,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
         /**
          * @inheritDoc
          */
-        save = async (twit: Twit): Promise<OverViewPost[]> => {
+        save = async (twit: Twit, hashtags: string[]): Promise<OverViewPost[]> => {
             let post = await this.auraRepository.executeQuery(
                 'CREATE (p:Post {id:randomUUID(),\
                                 created_by:$token,\
@@ -113,7 +113,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 origin_post: $origin_post,\
                                 is_private: $is_private,\
                                 deleted: $deleted,\
-                                is_blocked: $is_blocked\
+                                is_blocked: $is_blocked,\
+                                hashtags: $hashtags\
                 })\
                 RETURN p.id AS post_id,\
                     p.message AS message,\
@@ -131,7 +132,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     false as FavedPost,\
                     p.deleted as deleted,\
                     false as userRetweeted,\
-                    p.is_blocked as is_blocked\
+                    p.is_blocked as is_blocked,\
+                    p.hashtags as hashtags\
                 ',
                 {token:twit.getToken(),
                     message:twit.getMessage(),
@@ -141,14 +143,16 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     origin_post:null,
                     is_private: twit.getIsPrivate(),
                     deleted:false,
-                    is_blocked: false
+                    is_blocked: false,
+                    hashtags: hashtags,
                 })
+            console.log(post.records[0])
             return this.formatPosts(post)
 
             
         };
 
-        comment_post = async (comment: CommentQuery): Promise<OverViewPost[]> =>{
+        comment_post = async (comment: CommentQuery, hashtags: string[]): Promise<OverViewPost[]> =>{
             let comm = await this.auraRepository.executeQuery(
                 'MATCH (p:Post {id:$post_id})\
                 WITH CASE WHEN p.is_retweet = true THEN p.origin_post ELSE p.id END AS ID\
@@ -163,7 +167,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                                 origin_post: $origin_post,\
                                 is_private: targetPost.is_private,\
                                 deleted: $deleted,\
-                                is_blocked: $is_blocked\
+                                is_blocked: $is_blocked,\
+                                hashtags: $hashtags\
                 })\
                 WITH c, targetPost\
                 CREATE (targetPost)-[:COMMENTED_BY]->(c)\
@@ -194,7 +199,8 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 post_id:comment.getPostId(),
                 is_private:false,
                 deleted:false,
-                is_blocked: false
+                is_blocked: false,
+                hashtags:hashtags
                 }
             )
             return this.formatPosts(comm);
@@ -803,6 +809,118 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             {user_id:user_id,offset:pagination.offset,limit:pagination.limit,idList:following, banned_users:banned_ids, filter:filter})
             const posts = {posts:await this.formatPosts(result)};
             return posts;
+        }
+
+        public serachByTotalHashtag = async (user_id: string,  banned_ids: string[], pagination: Pagination, pattern: string, following: Array<string>): Promise<OverViewPosts>=>{
+            const result= await this.auraRepository.executeQuery('\
+            MATCH (p:Post)\
+                WHERE NOT p.created_by  IN $banned_users AND NOT p.is_blocked AND NOT p.deleted \
+                        AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id) AND $pattern IN p.hashtags \
+                OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+                OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+                OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+                WITH p, like, reply, retweet,\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                    \
+                OPTIONAL MATCH (d:Post {id: originalId})\
+                WITH p, d, like, reply, retweet\
+                WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+                like, reply, retweet\
+                WHERE  $pattern IN postData.hashtags AND NOT postData.created_by IN $banned_users AND NOT postData.is_blocked \
+                    AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by IN $idList or postData.created_by = $user_id)\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                    WHERE  NOT originalLike.liked_by IN $banned_users\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                    WHERE NOT originalRetweet.created_by  IN $banned_users\
+                OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                    WHERE NOT originalReply.created_by  IN $banned_users AND NOT originalReply.is_blocked AND NOT originalReply.deleted\
+                OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
+                WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                    CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
+                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                    CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
+                ORDER BY p.created_at DESC\
+                RETURN DISTINCT p.id AS post_id,\
+                        postData.message AS message,\
+                        postData.created_by AS created_by,\
+                        postData.tags AS tags,\
+                        postData.created_at AS created_at,\
+                        p.is_comment AS is_comment,\
+                        p.is_retweet AS is_retweet,\
+                        p.origin_post AS origin_post,\
+                        COUNT(DISTINCT originalReply) AS ammount_comments,\
+                        COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                        COUNT(DISTINCT originalLike) AS ammount_likes,\
+                        postData.is_private as is_private,\
+                        userLikedPost as userLikedPost,\
+                        userFavedPost as FavedPost,\
+                        postData.deleted as deleted,\
+                        userRetweeted as userRetweeted,\
+                        postData.is_blocked as is_blocked\
+                SKIP toInteger($offset)\
+                LIMIT toInteger($limit)\
+                ',
+                {user_id:user_id,offset:pagination.offset,limit:pagination.limit,idList:following, banned_users:banned_ids, pattern: pattern})
+                const posts = {posts:await this.formatPosts(result)};
+                return posts;
+        }
+
+        public searchByPartialString = async (user_id: string,  banned_ids: string[], pagination: Pagination, search: string, following: Array<string>):Promise<OverViewPosts>=>{
+            const result= await this.auraRepository.executeQuery('\
+            MATCH (p:Post)\
+                WHERE NOT p.created_by  IN $banned_users AND NOT p.is_blocked AND NOT p.deleted \
+                        AND (NOT p.is_private or p.created_by IN $idList or p.created_by = $user_id) AND p.message CONTAINS $search \
+                OPTIONAL MATCH (p)-[:LIKED_BY]->(like:Like)\
+                OPTIONAL MATCH (p)-[:COMMENTED_BY*]->(reply:Post)\
+                OPTIONAL MATCH (p)-[:RETWEETED_BY]->(retweet: Post)\
+                WITH p, like, reply, retweet,\
+                    CASE WHEN p.is_retweet = true THEN p.origin_post ELSE null END AS originalId\
+                    \
+                OPTIONAL MATCH (d:Post {id: originalId})\
+                WITH p, d, like, reply, retweet\
+                WITH p,CASE WHEN p.is_retweet = true THEN d ELSE p END AS postData,\
+                like, reply, retweet\
+                WHERE  postData.message CONTAINS $search AND NOT postData.created_by IN $banned_users AND NOT postData.is_blocked \
+                    AND NOT postData.deleted AND (NOT postData.is_private or postData.created_by IN $idList or postData.created_by = $user_id)\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(originalLike:Like)\
+                    WHERE  NOT originalLike.liked_by IN $banned_users\
+                OPTIONAL MATCH (postData)-[:LIKED_BY]->(userLiked:Like {liked_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(originalRetweet:Post)\
+                    WHERE NOT originalRetweet.created_by  IN $banned_users\
+                OPTIONAL MATCH (postData)-[:COMMENTED_BY*]->(originalReply:Post)\
+                    WHERE NOT originalReply.created_by  IN $banned_users AND NOT originalReply.is_blocked AND NOT originalReply.deleted\
+                OPTIONAL MATCH (f: Favorite {post_id: postData.id, favored_by: $user_id})\
+                OPTIONAL MATCH (postData)-[:RETWEETED_BY]->(retweeted: Post {created_by: $user_id})\
+                WITH p,postData,like,reply,retweet,originalLike,originalRetweet,originalReply,\
+                    CASE WHEN userLiked IS NOT NULL THEN true ELSE false END AS userLikedPost,\
+                    CASE WHEN f IS NOT NULL THEN true ELSE false END as userFavedPost,\
+                    CASE WHEN retweeted IS NOT NULL THEN true ELSE false END as userRetweeted\
+                ORDER BY p.created_at DESC\
+                RETURN DISTINCT p.id AS post_id,\
+                        postData.message AS message,\
+                        postData.created_by AS created_by,\
+                        postData.tags AS tags,\
+                        postData.created_at AS created_at,\
+                        p.is_comment AS is_comment,\
+                        p.is_retweet AS is_retweet,\
+                        p.origin_post AS origin_post,\
+                        COUNT(DISTINCT originalReply) AS ammount_comments,\
+                        COUNT(DISTINCT originalRetweet) AS ammount_retwits,\
+                        COUNT(DISTINCT originalLike) AS ammount_likes,\
+                        postData.is_private as is_private,\
+                        userLikedPost as userLikedPost,\
+                        userFavedPost as FavedPost,\
+                        postData.deleted as deleted,\
+                        userRetweeted as userRetweeted,\
+                        postData.is_blocked as is_blocked\
+                SKIP toInteger($offset)\
+                LIMIT toInteger($limit)\
+                ',
+                {user_id:user_id,offset:pagination.offset,limit:pagination.limit,idList:following, banned_users:banned_ids, search: search})
+                const posts = {posts:await this.formatPosts(result)};
+                return posts;
         }
 
         private formatPosts = async (result: EagerResult) => {

@@ -20,9 +20,9 @@ export interface TwitRepository {
      * @param user - The `User` entity to be saved.
      * @returns A promise that resolves to the saved `User` entity.
      */
-    save: (user: Twit) => Promise<OverViewPost[]>;
+    save: (user: Twit,hashtags:string[]) => Promise<OverViewPost[]>;
 
-    comment_post: (comment:CommentQuery) => Promise<OverViewPost[]>
+    comment_post: (comment:CommentQuery,hashtags:string[]) => Promise<OverViewPost[]>
 
     getAllByUserId: (id: string,pagination:Pagination, is_prohibited: boolean, user_id:string, follwing: Array<string>, banned_ids: string[]) => Promise<OverViewPosts>;
 
@@ -49,4 +49,8 @@ export interface TwitRepository {
     getTrendingTopics: (user_id: string, lista_baneados: string[]) => Promise<[string,Number][]>
 
     getTopicsFilteredByTag: (user_id: string,  banned_ids: string[], pagination: Pagination, filter: string, following: Array<string>) => Promise<OverViewPosts>;
+
+    serachByTotalHashtag: (user_id: string,  banned_ids: string[], pagination: Pagination, pattern: string, following: Array<string>) => Promise<OverViewPosts>;
+
+    searchByPartialString: (user_id: string,  banned_ids: string[], pagination: Pagination, search: string, following: Array<string>) => Promise<OverViewPosts>;
 }

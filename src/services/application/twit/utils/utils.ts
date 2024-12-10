@@ -260,4 +260,15 @@ export class Utils {
             })
             return clean_user_names;
         }
+
+        public isOnlyHashtag = (input: string): boolean => {
+            const regex = /^#\w+$/g;
+            return regex.test(input);
+          }
+
+          public extractHashtags(input: string): string[] {
+            const mentionPattern = /#\w+/g;
+            return input.match(mentionPattern) || [];
+        }
+          
 }

@@ -34,7 +34,9 @@ export class TwitService {
         if (twit.getMessage().length > 280){
             throw new MessageTooLongError("El post tiene un mensaje muy largo");
         }
-        let post =  (await this.twitRepository.save(twit))[0];
+        let hashtags = this.utils.extractHashtags(twit.getMessage());
+        console.log(hashtags)
+        let post =  (await this.twitRepository.save(twit,hashtags))[0];
         let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",twit.getToken());
         
         if (!original_poster){
@@ -46,7 +48,8 @@ export class TwitService {
     }
 
     public comment = async (comment: CommentQuery) => {
-        let comm = await this.twitRepository.comment_post(comment);
+        let hashtags = this.utils.extractHashtags(comment.getMessage());
+        let comm = await this.twitRepository.comment_post(comment,hashtags);
         let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",comment.getToken());
         if (! original_poster){
             return comm
@@ -187,24 +190,45 @@ export class TwitService {
     public trendingTopics = async(user_id:string, pagination: Pagination) => {
         let lista_baneados = await this.utils.getBannedUsers();
         const activity = await this.twitRepository.getTrendingTopics(user_id, lista_baneados);
-        console.log(activity);
-        console.log(pagination.offset);
-        console.log(pagination.limit);
         let acti = activity.slice(Number(pagination.offset),Number(pagination.offset)+Number(pagination.limit));
-        console.log(acti);
         return acti;
     }
 
     public filteredByTopic = async (user_id: string, tag_filter:string, pagination: Pagination) => {
         const following: Array<any> = await this.utils.getAllFollowingOf(user_id);
         const lista_followers = this.utils.getFollowingList(following);
-        console.log(lista_followers);
         let lista_baneados = await this.utils.getBannedUsers();
         const feed = await this.twitRepository.getTopicsFilteredByTag(user_id, lista_baneados,pagination, tag_filter,lista_followers);
         let posts = feed?.posts
-        console.log(posts)
-        logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
+        
+        
         await this.utils.getUsersFromPosts(posts);
+        logger.logInfo("La cantidad de twits obtenidos es: "+ posts.length);
         return {posts:posts};
+    }
+
+    public searchTwits = async (user_id: string,search: string,pagination: Pagination) => {
+        const following: Array<any> = await this.utils.getAllFollowingOf(user_id);
+        const lista_followers = this.utils.getFollowingList(following);
+        let lista_baneados = await this.utils.getBannedUsers();
+        if (this.utils.isOnlyHashtag(search)){
+            logger.logInfo("Se busca con hashtag Total")
+            
+            let searching = await this.twitRepository.serachByTotalHashtag(user_id,lista_baneados,pagination,search,lista_followers);
+
+            let posts = searching?.posts
+            await this.utils.getUsersFromPosts(posts);
+            return {posts:posts}
+
+        }
+
+        else{
+            logger.logInfo("Busqueda total o parcial del search string");
+            let searching = await this.twitRepository.searchByPartialString(user_id,lista_baneados,pagination,search,lista_followers);
+            let posts = searching?.posts
+            await this.utils.getUsersFromPosts(posts);
+            return {posts:posts}
+
+        }
     }
 }
