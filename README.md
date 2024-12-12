@@ -31,20 +31,32 @@ Se provee tambien un .env.example con lo necesario para correr este microservici
 
 ### **Environment variables**
 
-  Para poder correr el programa correctamente se deben setear las variables de entorno correspondientes en un .env
-  PORT = Puerto en el que se va a abrir el servicio
-NODE_ENV= Modo en el cual se abrira el servicio, test o dev
+  Para poder correr el programa correctamente se deben setear las variables de entorno correspondientes en un .env.
+  Se provee un .env.example listo para ser usado. simplemente copiar y pegar el contenido en un .env, cambiando la ruta de TEST_MATCH para que apunte correctamente al directorio de tests
+
+PORT = Puerto en el que se va a abrir el servicio
+
+NODE_ENV= Modo en el cual se abrira el servicio. ENV= ´test´ o ´dev´
 
 LOG_ROUTE= Ruta donde se guardará todos los logs
+
 LOGGING= Si se deben logear mensajes en general 
+
 LOG_INFO/ERROR/DEBUG= True si se quiere que se loguee ese nivel de log
+
 AURA_URI= Path a la base de datos Neo4j en Aura
+
 AURA_USER= Usuario de Neo4j
+
 AURA_PASSWORD= Contraseña de la base de datos
 
+
 AURA_TEST_URI=Path a la base de datos Neo4j en Aura para tests
+
 AURA_TEST_USER= Usuario de Neo4j para tests
+
 AURA_TEST_PASSWORD= Contraseña de la base de datos par tests
+
 
 TEST_MATCH= Path al directorio donde se encuentran los tests
 
