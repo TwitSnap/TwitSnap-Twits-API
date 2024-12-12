@@ -8,7 +8,7 @@ const requiredEnvVars = [
     "LOG_ROUTE", "LOGGING",
     "LOG_ERROR", "LOG_DEBUG", "LOG_INFO",  "USERS_MS_URI",
     "NOTIF_MS_URI","TEST_MATCH","AURA_URI","AURA_USER","AURA_PASSWORD",
-    "AURA_TEST_URI","AURA_TEST_USER","AURA_TEST_PASSWORD"
+    "AURA_TEST_URI","AURA_TEST_USER","AURA_TEST_PASSWORD", "SERVICE_KEY"
 ];
 
 Helpers.validateEnvVarsList(requiredEnvVars);
@@ -16,6 +16,7 @@ Helpers.validateEnvVarsList(requiredEnvVars);
 // ? Server config
 export const PORT = process.env.PORT;
 export const JWT_EXPIRATION_TIME = process.env.JWT_EXPIRATION_TIME;
+export const SERVICE_KEY = process.env.SERVICE_KEY as string;
 
 // ? Logger config
 export const LOG_ROUTE = process.env.LOG_ROUTE;

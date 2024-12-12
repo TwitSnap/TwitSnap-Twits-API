@@ -35,7 +35,6 @@ export class TwitService {
             throw new MessageTooLongError("El post tiene un mensaje muy largo");
         }
         let hashtags = this.utils.extractHashtags(twit.getMessage());
-        console.log(hashtags)
         let post =  (await this.twitRepository.save(twit,hashtags))[0];
         let original_poster = await this.utils.getRequestForUser(USERS_MS_URI+ "/api/v1/users/",twit.getToken());
         
@@ -90,8 +89,6 @@ export class TwitService {
         if (id === op_id){
             is_prohibited = false;
         }
-        logger.logInfo("El usuario " + op_id + "Puede o no ver twits: " + is_prohibited)
-        console.log(lista_following);
         let lista_baneados: string[] = await this.utils.getBannedUsers();
         let overview = await this.twitRepository.getAllByUserId(id,pagination,is_prohibited,op_id,lista_following, lista_baneados);
         let posts = overview?.posts
@@ -176,7 +173,6 @@ export class TwitService {
                 let possible_interests = await axios.get(USERS_MS_URI+ "/api/v1/interests/");
                 user_interests = possible_interests.data.interests;
             }
-            console.log(user_interests);
             const users_with_similar_interactions = await this.twitRepository.getAccountsFor(user_interests, lista_baneados,user_id);
             let users = await (await this.utils.getUserData(users_with_similar_interactions)).slice(pagination.offset);
             if (users.length > pagination.limit){

@@ -1,3 +1,4 @@
+import { SERVICE_KEY } from './../../../utils/config';
 import { OverViewPostAdmin } from './../../domain/PostAdmin';
 import axios, { HttpStatusCode } from "axios";
 import { injectable, inject } from "tsyringe";
@@ -57,7 +58,7 @@ export class TwitAdminService {
     private getRequestForUser = async (url:string,id: string) => {
         url = url+id;
         logger.logInfo("Trying to get info from user: "+ url)
-        const request = await axios.get(url,{ headers: { user_id:id}}).catch(e => {
+        const request = await axios.get(url,{ headers: { service_key: SERVICE_KEY,user_id:id}}).catch(e => {
             logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${url}
@@ -73,37 +74,6 @@ export class TwitAdminService {
             Result: SUCCESS`
         , this.constructor);
         return request
-    }
-
-    private getUserData = async (ids: string[]) => {
-        let users = [];
-        const url = USERS_MS_URI + "/api/v1/users/"
-        for await (let id of ids){
-            try{
-                const request = await this.getRequestForUser(url,id);
-                if (request){
-                    let user: UserNamePhoto = {
-                        username: request.data.username,
-                        photo: request.data.photo,
-                        id: id,
-                    }
-                    users.push(user)
-                }
-            }
-            catch(e){
-                if (e instanceof InvalidCredentialsError) {
-                    let user: UserNamePhoto = {
-                        username: "DELETED",
-                        photo: "https://firebasestorage.googleapis.com/v0/b/twitsnap-82671.appspot.com/o/default_avatar.jpeg?alt=media&token=659cbdba-c47d-47af-83b8-c7da642d739f",
-                        id: id
-                    }
-                    users.push(user);
-                    } else {
-                     throw e; // let others bubble up
-                    }
-            }
-        }
-        return users;
     }
 
     private getUsersFromPosts = async (posts:OverViewPostAdmin[]) => {

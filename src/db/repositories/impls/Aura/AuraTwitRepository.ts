@@ -146,7 +146,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                     is_blocked: false,
                     hashtags: hashtags,
                 })
-            console.log(post.records[0])
             return this.formatPosts(post)
 
             
@@ -353,7 +352,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 CREATE (targetPost)-[:LIKED_BY]->(l)\
                 '
             ,{user_id:user_id,post_id:post_id})
-            console.log(like.summary)
             return
         }
 
@@ -952,15 +950,6 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
                 posts.push(obj)
             }
             return posts;   
-        }
-
-        private formatUsers = async (result: EagerResult) => {
-            const records = result.records;
-            let ids = [];
-            for (let record of records){
-                ids.push(record.get("user"));
-            }
-            return ids;
         }
 
 

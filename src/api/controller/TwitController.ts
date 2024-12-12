@@ -37,7 +37,6 @@ export class TwitController extends Controller{
             
             const post =  await this.twitService.post(body);
             logger.logInfo("Posted Twit from user: " + user_id)
-            console.log(post);
             this.okNoContentResponse(res);
             return;
         }
@@ -54,6 +53,7 @@ export class TwitController extends Controller{
             const retwit_id = this.getQueryFieldOrBadRequestError<string>(req,"post_id");
             logger.logInfo("Attemptin to retwit post: "+ retwit_id)
             await this.twitService.retwit(retwit_id,user_id);
+            logger.logInfo("Twit fue retwiteado exitosamente");
             return this.okNoContentResponse(res);
         }catch(e){
             next(e)
@@ -138,6 +138,7 @@ export class TwitController extends Controller{
             logger.logInfo("Trying to retrieve all post from user: "+ id)
             const posts = await this.twitService.getAllPostsFrom(id,pagination,op_id);
             console.log(posts);
+            logger.logInfo("Se devuelven: " + posts.posts.length + " posts del usuario : " + id)
             this.okResponse(res,posts);
         }
         catch(e){
@@ -179,6 +180,7 @@ export class TwitController extends Controller{
             const pagination = this.getPagination(req);
             const comments = await this.twitService.getCommentsFromPost(post_id,pagination,user_id);
             console.log(comments);
+            logger.logInfo("Se devuelven: " + comments.length + " comentarios del post : " + post_id)
             return this.okResponse(res,comments);
         }
         catch(e){
@@ -193,6 +195,7 @@ export class TwitController extends Controller{
             const target_id = this.getQueryFieldOrBadRequestError<string>(req,"user");
             const pagination = this.getPagination(req);
             const posts = await this.twitService.getFavorites(user_id,target_id,pagination);
+            logger.logInfo("Se devuelven: " + posts.length + " favoritos del usuario : " + target_id)
             return this.okResponse(res,posts);
         }
         catch(e){
@@ -232,6 +235,7 @@ export class TwitController extends Controller{
             const pagination = this.getPagination(req);
             logger.logInfo("Se intenta Buscar el feed del usuario: " + user_id)
             const result = await this.twitService.getFeedFor(user_id,pagination);
+            logger.logInfo("Se devuelven: " + result.posts.length + " de feed para el usuario: " + user_id)
             return this.okResponse(res,result);
         }
         catch(e){
@@ -243,8 +247,9 @@ export class TwitController extends Controller{
         try{
             const user_id = await this.obtainIdFromToken(req);
             const pagination = this.getPagination(req);
-            logger.logInfo("Se busca  "+ user_id);
+            logger.logInfo("Se busca cuentas recomendadas para "+ user_id);
             const accounts = await this.twitService.getRecommendedAccounts(user_id,pagination);
+            logger.logInfo("Se devuelven cuentas recomendadas para " + user_id)
             return this.okResponse(res,accounts);
         }
         catch(e){
@@ -255,9 +260,10 @@ export class TwitController extends Controller{
     public trendingTopics = async (req: Request, res: Response, next: NextFunction) => {
         try{
             const user_id = await this.obtainIdFromToken(req);
-            logger.logInfo("Tryning to get trending topics for: " + user_id);
+            logger.logInfo("Obteniendo trending topics para: " + user_id);
             const pagination = this.getPagination(req)
             let topics_activity = await this.twitService.trendingTopics(user_id, pagination);
+            logger.logInfo("Se devuelven trending topics para: " + user_id);
             return this.okResponse(res,topics_activity);
         }
         catch(e){
@@ -268,10 +274,11 @@ export class TwitController extends Controller{
     public getFilteredPosts = async (req: Request, res: Response, next: NextFunction) => {
         try{
             const user_id = await this.obtainIdFromToken(req);
-            logger.logInfo("Tryning to get trending filtered_posts for: " + user_id);
+            logger.logInfo("Se intenta obtener posts filtrados por topics para : " + user_id);
             const tag_filter = this.getQueryFieldOrBadRequestError<string>(req,"tag");
             const pagination = this.getPagination(req);
             let posts = await this.twitService.filteredByTopic(user_id,tag_filter, pagination);
+            logger.logInfo("Se devuelven: " + posts.posts.length + " filtrados por topic: " + tag_filter + " para usuario: " + user_id)
             return this.okResponse(res,posts);
         }
         catch(e){
@@ -284,9 +291,10 @@ export class TwitController extends Controller{
             const user_id = await this.obtainIdFromToken(req);
             logger.logInfo("Trying to get twits for:" + user_id);
             const search = this.getQueryFieldOrBadRequestError<string>(req,"search");
-            logger.logInfo("Trying to get twits for:" + user_id + "with search: " + search);
+            logger.logInfo("Trying to get twits for:" + user_id + " with search: " + search);
             const pagination = this.getPagination(req);
             let posts = await this.twitService.searchTwits(user_id,search,pagination);
+            logger.logInfo("Se devuelven: " + posts.posts.length + " filtrados por : " + search + " para usuario: " + user_id)
             return this.okResponse(res,posts);
         }
         catch(e){

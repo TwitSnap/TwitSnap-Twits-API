@@ -23,7 +23,6 @@ app.use(errorMiddleware);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const databaseConnector: AuraDatabaseConnectorStrategy = container.resolve("DatabaseConnectorStrategy");
-databaseConnector.initializeConnection()
 databaseConnector.initializeConnection().then(() => {
     server = app.listen(PORT, () => {
         logger.logInfo(`Server is running on port ${PORT}`);

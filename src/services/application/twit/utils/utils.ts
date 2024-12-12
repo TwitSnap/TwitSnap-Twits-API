@@ -1,5 +1,5 @@
 import axios, { HttpStatusCode } from "axios";
-import { NOTIF_MS_URI, USERS_MS_URI } from "../../../../utils/config";
+import { NOTIF_MS_URI, SERVICE_KEY, USERS_MS_URI } from "../../../../utils/config";
 import { logger } from "../../../../utils/container/container";
 import { OverViewPost } from "../../../domain/Post";
 import { UserNamePhoto } from "../../../domain/UserNamePhoto";
@@ -97,7 +97,7 @@ export class Utils {
         public getRequestForUser = async (url:string,id: string) => {
             url = url+id;
             logger.logInfo("Trying to get info from user: "+ url)
-            const request = await axios.get(url,{ headers: { user_id:id}}).catch(e => {
+            const request = await axios.get(url,{ headers: { user_id:id, service_key: SERVICE_KEY}}).catch(e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                     ID: ${new Date().toISOString()}
                     URL: ${url}
@@ -117,7 +117,7 @@ export class Utils {
     
         public getAllFollowingOf = async (id:string) => {
             const url = USERS_MS_URI + "/api/v1/users/" + id + "/following"
-            const request = await axios.get(url, {headers: {user_id:id}}).catch(e => {
+            const request = await axios.get(url, {headers: {user_id:id, service_key: SERVICE_KEY}}).catch(e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                     ID: ${new Date().toISOString()}
                     URL: ${url}
@@ -163,7 +163,7 @@ export class Utils {
         }
     
         public getBannedUsers = async () => {
-            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {params: {is_banned:true,offset:0,limit:1000}}).catch( e => {
+            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {service_key: SERVICE_KEY},params: {is_banned:true,offset:0,limit:1000}}).catch( e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${"http://api.geonames.org/countryInfoJSON"}
@@ -186,7 +186,7 @@ export class Utils {
         }
 
         public getNonBannedUsers = async () => {
-            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {params: {is_banned:false,offset:0,limit:1000}}).catch( e => {
+            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {service_key: SERVICE_KEY},params: {is_banned:false,offset:0,limit:1000}}).catch( e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${"http://api.geonames.org/countryInfoJSON"}
@@ -214,9 +214,7 @@ export class Utils {
             let token_users = users.filter( (user) => {
                 return usernames.includes(user.username)
             })
-            console.log("los usuarios son: ");
             let tokens = token_users.map(user => {
-                console.log(user.device_token)
                 return user.device_token
             }).flat().filter(token => {
                 if (token == 'None'){
@@ -225,14 +223,14 @@ export class Utils {
                 return true
             });
             if (tokens.length == 0){
-                console.log("El numero de tokens es 0")
+                logger.logInfo("No se notifica a ningun usuario")
                 return;
             }
             let body = `Hola! El usuario ${executor} te menciono en un twit!`;
-            console.log(tokens);
                 await axios({
                     method: 'post',
                     url: NOTIF_MS_URI+"/v1/eventNotification",
+                    headers: {service_key: SERVICE_KEY},
                     data: 
                         {
                             "type": "push",
