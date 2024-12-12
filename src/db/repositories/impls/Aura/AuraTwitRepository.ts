@@ -303,7 +303,7 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
 
         }
 
-        patch = async (twit: editTwit):Promise<void> => {
+        patch = async (twit: editTwit, hashtags:string[]):Promise<void> => {
             const post_from_user = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {id:$post_id, created_by: $user_id})\
                 return p\
@@ -313,9 +313,9 @@ export class AuraTwitRepository extends AuraRepository implements TwitRepository
             }
             const result  = await this.auraRepository.executeQuery('\
                 MATCH (p:Post {id:$post_id, created_by: $user_id})\
-                SET p.message= $new_message, p.tags= $new_tags\
+                SET p.message= $new_message, p.tags= $new_tags, p.hashtags=$hashtags\
                 return p\
-            ',{new_message:twit.message,new_tags:twit.tags, post_id:twit.post_id,user_id:twit.token});
+            ',{new_message:twit.message,new_tags:twit.tags, post_id:twit.post_id,user_id:twit.token, hashtags: hashtags});
         }
 
         likeTwit = async (post_id: string, user_id:string):  Promise<void> => {

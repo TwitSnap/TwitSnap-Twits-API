@@ -107,7 +107,8 @@ export class TwitService {
         if (twit.message.length > 280){
             throw new MessageTooLongError("El mensaje es muy largo");
         }
-        await this.twitRepository.patch(twit);
+        let hashtags = this.utils.extractHashtags(twit.message);
+        await this.twitRepository.patch(twit,hashtags);
         return
     }
 

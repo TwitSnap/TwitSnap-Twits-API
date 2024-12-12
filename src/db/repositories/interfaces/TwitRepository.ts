@@ -38,7 +38,7 @@ export interface TwitRepository {
 
     delete: (post_id: string, user_id: string) => Promise<void>;
 
-    patch: (twit: editTwit) => Promise<void>;
+    patch: (twit: editTwit,hashtags:string[]) => Promise<void>;
 
     saveFavorite: (user_id: string, post_id: string) => Promise<void>;
 

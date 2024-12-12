@@ -44,6 +44,11 @@ describe('Errors', () => {
         expect(lista_posts.status).toBe(500);
     })
 
+    it ("should return 400 if no offset or limit set", async () => {
+        let response = await request(app).get("/v1/twit/posts/user").query({user_id: "1"}).set({user_id:"1"}).send();
+        expect(response.status).toBe(400);
+    })
+
    
 
 })

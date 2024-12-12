@@ -22,7 +22,6 @@ export class TwitController extends Controller{
 
     public postTwit = async (req: Request, res: Response, next: NextFunction) => {
 
-
         try{
             const user_id  = await this.obtainIdFromToken(req);
             const t_tags = this.getFieldOrBadRequestError<string[]>(req,"tags")

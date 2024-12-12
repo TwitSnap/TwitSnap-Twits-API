@@ -21,7 +21,7 @@ Este microservicio se encarga de todo lo relacionado con los twits, las interacc
 ### **Como instalar y correr**
 
 Se provee un docker-compose.yml para poder facilitar la ejecucion del ambiente.
-
+El puerto es configurable desde el .env
 ```bash
     # Con Docker compose
     docker-compose up --build -d
@@ -36,7 +36,7 @@ Se provee un docker-compose.yml para poder facilitar la ejecucion del ambiente.
 
     #Se puede correr normalmente tambien
     npm run install
-    npm run start
+    npm run dev
 ```
 
 ## Documentacion
