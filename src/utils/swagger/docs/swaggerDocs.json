@@ -801,13 +801,6 @@
         "description": "Use this endpoint to authenticate user.",
         "parameters": [
           {
-            "name": "user_id",
-            "in": "query",
-            "description": "Optional name for filtering",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "offset",
             "in": "query",
             "description": "The offset Desired",
