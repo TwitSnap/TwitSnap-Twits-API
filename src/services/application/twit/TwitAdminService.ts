@@ -58,7 +58,7 @@ export class TwitAdminService {
     private getRequestForUser = async (url:string,id: string) => {
         url = url+id;
         logger.logInfo("Trying to get info from user: "+ url)
-        const request = await axios.get(url,{ headers: { service_key: SERVICE_KEY,user_id:id}}).catch(e => {
+        const request = await axios.get(url,{ headers: { api_key: SERVICE_KEY,user_id:id}}).catch(e => {
             logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${url}

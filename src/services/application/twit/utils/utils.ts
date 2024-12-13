@@ -97,7 +97,7 @@ export class Utils {
         public getRequestForUser = async (url:string,id: string) => {
             url = url+id;
             logger.logInfo("Trying to get info from user: "+ url)
-            const request = await axios.get(url,{ headers: { user_id:id, service_key: SERVICE_KEY}}).catch(e => {
+            const request = await axios.get(url,{ headers: { user_id:id, api_key: SERVICE_KEY}}).catch(e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                     ID: ${new Date().toISOString()}
                     URL: ${url}
@@ -117,7 +117,7 @@ export class Utils {
     
         public getAllFollowingOf = async (id:string) => {
             const url = USERS_MS_URI + "/api/v1/users/" + id + "/following"
-            const request = await axios.get(url, {headers: {user_id:id, service_key: SERVICE_KEY}}).catch(e => {
+            const request = await axios.get(url, {headers: {user_id:id, api_key: SERVICE_KEY}}).catch(e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                     ID: ${new Date().toISOString()}
                     URL: ${url}
@@ -163,7 +163,7 @@ export class Utils {
         }
     
         public getBannedUsers = async () => {
-            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {service_key: SERVICE_KEY},params: {is_banned:true,offset:0,limit:1000}}).catch( e => {
+            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {api_key: SERVICE_KEY},params: {is_banned:true,offset:0,limit:1000}}).catch( e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${"http://api.geonames.org/countryInfoJSON"}
@@ -186,7 +186,7 @@ export class Utils {
         }
 
         public getNonBannedUsers = async () => {
-            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {service_key: SERVICE_KEY},params: {is_banned:false,offset:0,limit:1000}}).catch( e => {
+            const request = await axios.get(USERS_MS_URI+"/api/v1/admin/users", {headers: {api_key: SERVICE_KEY},params: {is_banned:false,offset:0,limit:1000}}).catch( e => {
                 logger.logDebugFromEntity(`Attempt HTTP request
                 ID: ${new Date().toISOString()}
                 URL: ${"http://api.geonames.org/countryInfoJSON"}
@@ -230,7 +230,7 @@ export class Utils {
                 await axios({
                     method: 'post',
                     url: NOTIF_MS_URI+"/v1/eventNotification",
-                    headers: {service_key: SERVICE_KEY},
+                    headers: {api_key: SERVICE_KEY},
                     data: 
                         {
                             "type": "push",
